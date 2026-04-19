@@ -1,11 +1,12 @@
 export const environment = {
   production: true,
   firebase: {
-    apiKey: 'AIzaSyA_pxK2e0H0U32EA1s-LhXCreHb76mnupM',
-    authDomain: 'worktocloud-agent.firebaseapp.com',
-    projectId: 'worktocloud-agent',
-    storageBucket: 'worktocloud-agent.firebasestorage.app',
-    messagingSenderId: '156404175525',
-    appId: '1:156404175525:web:fd21ba03b4a737d90fb34c',
+    apiKey: 'AIzaSyC7qAUGksu7ZpUuITa84KduxfvBRQLfK-w',
+    authDomain: 'sciquest-fun.firebaseapp.com',
+    projectId: 'sciquest-fun',
+    storageBucket: 'sciquest-fun.firebasestorage.app',
+    messagingSenderId: '240783455072',
+    appId: '1:240783455072:web:e994249140ca555755a405',
+    measurementId: 'G-Y96CHYNLSS',
   },
 };

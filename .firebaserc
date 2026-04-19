@@ -1,12 +1,5 @@
 {
   "projects": {
-    "default": "worktocloud-agent"
-  },
-  "targets": {
-    "worktocloud-agent": {
-      "hosting": {
-        "sciquest": ["sciquest-app"]
-      }
-    }
+    "default": "sciquest-fun"
   }
 }

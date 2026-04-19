@@ -1,13 +1,10 @@
 #!/bin/bash
-# SciQuest Deploy Script
-# Usage: ./deploy.sh
-
 set -e
 echo "🔨 Building SciQuest..."
 npm run build
 
 echo "🚀 Deploying to Firebase..."
-GOOGLE_APPLICATION_CREDENTIALS=/data/.openclaw/workspace/.firebase-sa.json \
-  firebase deploy --only hosting:sciquest --project worktocloud-agent
+GOOGLE_APPLICATION_CREDENTIALS=/data/.openclaw/workspace/.firebase-sa-sciquest.json \
+  firebase deploy --only hosting --project sciquest-fun
 
-echo "✅ Done! https://sciquest-app.web.app"
+echo "✅ Done! https://sciquest-fun.web.app"
