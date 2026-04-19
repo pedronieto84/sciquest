@@ -1,0 +1,78 @@
+<div class="min-h-screen bg-[#0f172a] pb-24">
+
+  <!-- Header -->
+  <div class="bg-gradient-to-br from-indigo-700 to-purple-700 px-4 pt-12 pb-6">
+    <div class="max-w-lg mx-auto flex items-center gap-3">
+      <a routerLink="/home" class="text-white/70 hover:text-white">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+      </a>
+      <div>
+        <h1 class="text-2xl font-black text-white">⚛️ Física Cuántica</h1>
+        <p class="text-indigo-200 text-sm">Lo más raro del universo</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="max-w-lg mx-auto px-4 mt-5">
+
+    <!-- Intro banner -->
+    <div class="bg-indigo-600/20 border border-indigo-500/30 rounded-2xl p-4 mb-5">
+      <p class="text-indigo-200 text-sm">
+        🌌 La física cuántica describe cómo se comportan las partículas subatómicas. Las reglas son completamente diferentes a las del mundo que vemos — ¡y son increíblemente extrañas!
+      </p>
+    </div>
+
+    <!-- Concepts grid -->
+    <h2 class="text-white font-bold mb-3">🔬 Conceptos Clave</h2>
+    <div class="flex flex-col gap-3">
+      @for (concept of concepts; track concept.id) {
+        <button (click)="select(concept)"
+          class="bg-[#1e293b] border border-slate-700/50 rounded-2xl p-4 text-left flex items-center gap-4 active:scale-95 transition-all hover:border-indigo-500/50">
+          <span class="text-4xl">{{ concept.emoji }}</span>
+          <div class="flex-1">
+            <p class="text-white font-bold">{{ concept.title }}</p>
+            <p class="text-slate-400 text-sm">{{ concept.tagline }}</p>
+          </div>
+          <span class="text-slate-500">→</span>
+        </button>
+      }
+    </div>
+
+    <!-- Quiz CTA -->
+    <a routerLink="/quiz" [queryParams]="{subject: 'quantum'}"
+      class="mt-6 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-4 flex items-center gap-4 active:scale-95 transition-all block">
+      <span class="text-3xl">🎯</span>
+      <div>
+        <p class="text-white font-bold">¡Pon a prueba lo aprendido!</p>
+        <p class="text-indigo-200 text-sm">Quiz de Física Cuántica</p>
+      </div>
+    </a>
+
+  </div>
+
+  <!-- Detail modal -->
+  @if (selected()) {
+    <div class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end justify-center p-4" (click)="close()">
+      <div class="bg-[#1e293b] rounded-3xl p-6 w-full max-w-sm border border-slate-700/50 max-h-[80vh] overflow-y-auto animate-bounce-in" (click)="$event.stopPropagation()">
+        <div class="flex justify-between items-start mb-2">
+          <span class="text-5xl">{{ selected()!.emoji }}</span>
+          <button (click)="close()" class="text-slate-500 text-2xl">×</button>
+        </div>
+        <h2 class="text-white text-2xl font-black mt-2">{{ selected()!.title }}</h2>
+        <p class="text-indigo-400 text-sm mb-3">{{ selected()!.tagline }}</p>
+        <p class="text-slate-300 text-sm mb-4">{{ selected()!.explanation }}</p>
+
+        <div class="bg-slate-800 rounded-2xl p-3 mb-3 text-center">
+          <p class="text-slate-400 text-xs mb-1">Visualización</p>
+          <p class="text-white font-mono text-sm">{{ selected()!.visual }}</p>
+        </div>
+
+        <div class="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3">
+          <p class="text-amber-300 text-sm">💡 <strong>Dato alucinante:</strong> {{ selected()!.funFact }}</p>
+        </div>
+      </div>
+    </div>
+  }
+</div>

@@ -1,0 +1,84 @@
+<div class="min-h-screen bg-[#0f172a] pb-24">
+  <div class="bg-gradient-to-br from-yellow-600 to-amber-600 px-4 pt-12 pb-6">
+    <div class="max-w-lg mx-auto flex items-center gap-3">
+      <a routerLink="/home" class="text-white/70 hover:text-white">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+      </a>
+      <div>
+        <h1 class="text-2xl font-black text-white">🏅 Ranking Global</h1>
+        <p class="text-yellow-100 text-sm">Top 20 científicos</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="max-w-lg mx-auto px-4 mt-5">
+    @if (loading()) {
+      <div class="flex justify-center py-10">
+        <div class="w-8 h-8 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin"></div>
+      </div>
+    } @else if (entries().length === 0) {
+      <div class="text-center py-12 text-slate-500">
+        <div class="text-5xl mb-3">🏆</div>
+        <p>¡Sé el primero en aparecer!</p>
+        <a routerLink="/quiz" class="mt-4 inline-block bg-indigo-600 text-white font-bold px-6 py-3 rounded-2xl">
+          Hacer un Quiz
+        </a>
+      </div>
+    } @else {
+      <!-- Top 3 podium -->
+      @if (entries().length >= 3) {
+        <div class="flex items-end justify-center gap-3 mb-6 px-4">
+          <!-- 2nd -->
+          <div class="flex-1 text-center">
+            <div class="text-2xl mb-1">{{ entries()[1].avatar }}</div>
+            <div class="bg-slate-600/30 rounded-t-2xl pt-3 pb-2 px-2">
+              <p class="text-slate-300 font-bold text-xs truncate">{{ entries()[1].displayName }}</p>
+              <p class="text-slate-400 text-xs">{{ entries()[1].xp }} XP</p>
+            </div>
+            <div class="bg-slate-500 text-white text-center py-1 rounded-b-lg text-sm font-bold">🥈</div>
+          </div>
+          <!-- 1st -->
+          <div class="flex-1 text-center">
+            <div class="text-3xl mb-1 animate-bounce">{{ entries()[0].avatar }}</div>
+            <div class="bg-amber-600/30 rounded-t-2xl pt-4 pb-2 px-2">
+              <p class="text-amber-200 font-bold text-xs truncate">{{ entries()[0].displayName }}</p>
+              <p class="text-amber-300 text-xs">{{ entries()[0].xp }} XP</p>
+            </div>
+            <div class="bg-amber-500 text-white text-center py-1 rounded-b-lg text-sm font-bold">🥇</div>
+          </div>
+          <!-- 3rd -->
+          <div class="flex-1 text-center">
+            <div class="text-2xl mb-1">{{ entries()[2].avatar }}</div>
+            <div class="bg-amber-800/30 rounded-t-2xl pt-2 pb-2 px-2">
+              <p class="text-amber-100/70 font-bold text-xs truncate">{{ entries()[2].displayName }}</p>
+              <p class="text-amber-400/60 text-xs">{{ entries()[2].xp }} XP</p>
+            </div>
+            <div class="bg-amber-700 text-white text-center py-1 rounded-b-lg text-sm font-bold">🥉</div>
+          </div>
+        </div>
+      }
+
+      <!-- Full list -->
+      <div class="flex flex-col gap-2">
+        @for (entry of entries(); track entry.uid; let i = $index) {
+          <div class="bg-[#1e293b] border border-slate-700/50 rounded-2xl p-3 flex items-center gap-3">
+            <span class="w-8 text-center font-bold text-sm" [class]="i < 3 ? 'text-amber-400' : 'text-slate-500'">
+              {{ medal(i) }}
+            </span>
+            <span class="text-2xl">{{ entry.avatar }}</span>
+            <div class="flex-1">
+              <p class="text-white font-bold text-sm">{{ entry.displayName }}</p>
+              <p class="text-slate-400 text-xs">Nivel {{ entry.level }}</p>
+            </div>
+            <div class="text-right">
+              <p class="text-indigo-400 font-bold text-sm">{{ entry.xp }}</p>
+              <p class="text-slate-500 text-xs">XP</p>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>

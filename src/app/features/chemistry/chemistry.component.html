@@ -1,0 +1,142 @@
+<div class="min-h-screen bg-[#0f172a] pb-24">
+
+  <!-- Header -->
+  <div class="bg-gradient-to-br from-emerald-700 to-teal-600 px-4 pt-12 pb-6">
+    <div class="max-w-lg mx-auto flex items-center gap-3">
+      <a routerLink="/home" class="text-white/70 hover:text-white">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+      </a>
+      <div>
+        <h1 class="text-2xl font-black text-white">🧪 Química</h1>
+        <p class="text-emerald-200 text-sm">Tabla Periódica + Juegos</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXPLORE MODE -->
+  @if (gameMode() === 'explore') {
+    <div class="max-w-lg mx-auto px-4 mt-5">
+
+      <!-- Search -->
+      <div class="relative mb-4">
+        <span class="absolute left-3 top-3 text-slate-400">🔍</span>
+        <input [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)"
+          placeholder="Buscar elemento..."
+          class="w-full bg-[#1e293b] text-white rounded-2xl pl-10 pr-4 py-3 text-sm border border-slate-700/50 outline-none focus:border-emerald-500" />
+      </div>
+
+      <!-- Game buttons -->
+      <div class="grid grid-cols-2 gap-3 mb-5">
+        <button (click)="startGuessGame('guess-element')"
+          class="bg-emerald-600/20 border border-emerald-500/30 rounded-2xl p-3 text-left active:scale-95 transition-all">
+          <p class="text-lg mb-1">🎯</p>
+          <p class="text-emerald-300 font-bold text-sm">¿Qué elemento es?</p>
+          <p class="text-slate-400 text-xs">Ve el símbolo, adivina el nombre</p>
+        </button>
+        <button (click)="startGuessGame('guess-symbol')"
+          class="bg-teal-600/20 border border-teal-500/30 rounded-2xl p-3 text-left active:scale-95 transition-all">
+          <p class="text-lg mb-1">🔤</p>
+          <p class="text-teal-300 font-bold text-sm">¿Cuál es el símbolo?</p>
+          <p class="text-slate-400 text-xs">Ve el nombre, adivina el símbolo</p>
+        </button>
+      </div>
+
+      <!-- Elements grid -->
+      <h2 class="text-white font-bold mb-3">📋 {{ filtered().length }} elementos</h2>
+      <div class="grid grid-cols-3 gap-2">
+        @for (el of filtered(); track el.atomicNumber) {
+          <button (click)="selectElement(el)"
+            class="rounded-xl p-2.5 border text-center active:scale-95 transition-all {{ categoryColors[el.category] || 'bg-slate-800 border-slate-700 text-slate-300' }}">
+            <p class="text-[10px] text-current/60">{{ el.atomicNumber }}</p>
+            <p class="text-xl font-black">{{ el.symbol }}</p>
+            <p class="text-[10px] leading-tight">{{ el.name }}</p>
+          </button>
+        }
+      </div>
+
+      <!-- Legend -->
+      <div class="mt-5">
+        <p class="text-slate-400 text-xs font-bold mb-2">Leyenda</p>
+        <div class="flex flex-wrap gap-2">
+          @for (cat of categories; track cat.key) {
+            <span class="text-xs px-2 py-1 rounded-lg border {{ categoryColors[cat.key] }}">{{ cat.label }}</span>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- GUESS GAME -->
+  @if (gameMode() === 'guess-element' || gameMode() === 'guess-symbol') {
+    <div class="max-w-lg mx-auto px-4 mt-6">
+      <div class="flex items-center justify-between mb-4">
+        <button (click)="backToExplore()" class="text-slate-400 hover:text-white flex items-center gap-1 text-sm">
+          ← Salir
+        </button>
+        <div class="flex items-center gap-2">
+          <span class="text-emerald-400 font-bold">✅ {{ guessScore() }}</span>
+          <span class="text-slate-500">/</span>
+          <span class="text-slate-400">{{ guessTotal() }}</span>
+        </div>
+      </div>
+
+      @if (guessTarget()) {
+        <div class="bg-[#1e293b] rounded-3xl p-6 text-center mb-4 border border-slate-700/50">
+          @if (gameMode() === 'guess-element') {
+            <p class="text-slate-400 text-sm mb-2">¿Cómo se llama este elemento?</p>
+            <p class="text-7xl font-black text-white mb-2">{{ guessTarget()!.symbol }}</p>
+            <p class="text-slate-500 text-sm">Nº {{ guessTarget()!.atomicNumber }}</p>
+          } @else {
+            <p class="text-slate-400 text-sm mb-2">¿Cuál es el símbolo de...</p>
+            <p class="text-3xl font-black text-white mb-1">{{ guessTarget()!.name }}</p>
+            <p class="text-slate-500 text-sm">Nº {{ guessTarget()!.atomicNumber }}</p>
+          }
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          @for (option of guessOptions(); track option.symbol) {
+            <button (click)="checkGuess(option)"
+              [class]="'rounded-2xl p-4 text-center font-bold text-base transition-all active:scale-95 border ' +
+                (guessResult() === null ? 'bg-[#1e293b] border-slate-700/50 text-white hover:border-emerald-500' :
+                  (option.symbol === guessTarget()!.symbol ? 'bg-emerald-600/30 border-emerald-500 text-emerald-300' :
+                    (guessResult() === 'wrong' ? 'bg-red-600/20 border-red-500/50 text-red-300' : 'bg-[#1e293b] border-slate-700/50 text-slate-500')))">
+              {{ gameMode() === 'guess-element' ? option.name : option.symbol }}
+            </button>
+          }
+        </div>
+
+        @if (guessResult()) {
+          <div [class]="'mt-4 rounded-2xl p-4 text-center ' + (guessResult() === 'correct' ? 'bg-emerald-600/20 border border-emerald-500/40' : 'bg-red-600/20 border border-red-500/40')">
+            <p class="text-2xl mb-1">{{ guessResult() === 'correct' ? '🎉' : '😅' }}</p>
+            <p [class]="'font-bold ' + (guessResult() === 'correct' ? 'text-emerald-300' : 'text-red-300')">
+              {{ guessResult() === 'correct' ? '¡Correcto!' : 'Incorrecto' }}
+            </p>
+            <p class="text-slate-400 text-sm mt-1">{{ guessTarget()!.funFact }}</p>
+          </div>
+        }
+      }
+    </div>
+  }
+
+  <!-- Element detail modal -->
+  @if (selected()) {
+    <div class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end justify-center p-4" (click)="closeDetail()">
+      <div class="bg-[#1e293b] rounded-3xl p-6 w-full max-w-sm border border-slate-700/50 animate-bounce-in" (click)="$event.stopPropagation()">
+        <div class="flex justify-between items-start mb-4">
+          <div [class]="'w-16 h-16 rounded-2xl flex items-center justify-center font-black text-2xl border ' + (categoryColors[selected()!.category] || 'bg-slate-800 border-slate-700 text-slate-300')">
+            {{ selected()!.symbol }}
+          </div>
+          <button (click)="closeDetail()" class="text-slate-500 text-2xl">×</button>
+        </div>
+        <h2 class="text-white text-2xl font-black">{{ selected()!.name }}</h2>
+        <p class="text-slate-400 text-sm mb-4">Número atómico: {{ selected()!.atomicNumber }} · Masa: {{ selected()!.atomicMass }}</p>
+        <p class="text-slate-300 text-sm mb-3">{{ selected()!.description }}</p>
+        <div class="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3">
+          <p class="text-amber-300 text-sm">💡 <strong>Dato curioso:</strong> {{ selected()!.funFact }}</p>
+        </div>
+      </div>
+    </div>
+  }
+</div>

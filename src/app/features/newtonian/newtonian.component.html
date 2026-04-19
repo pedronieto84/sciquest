@@ -1,0 +1,154 @@
+<div class="min-h-screen bg-[#0f172a] pb-24">
+
+  <!-- Header -->
+  <div class="bg-gradient-to-br from-blue-700 to-cyan-600 px-4 pt-12 pb-6">
+    <div class="max-w-lg mx-auto flex items-center gap-3">
+      <a routerLink="/home" class="text-white/70 hover:text-white">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+      </a>
+      <div>
+        <h1 class="text-2xl font-black text-white">🍎 Física Newtoniana</h1>
+        <p class="text-blue-200 text-sm">Leyes del movimiento</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="max-w-lg mx-auto px-4">
+    <div class="flex gap-1.5 mt-4 mb-5 bg-[#1e293b] p-1 rounded-2xl">
+      <button (click)="activeTab.set('laws')" [class]="'flex-1 py-2 rounded-xl text-xs font-bold transition-all ' + (activeTab() === 'laws' ? 'bg-blue-600 text-white' : 'text-slate-400')">Leyes</button>
+      <button (click)="activeTab.set('simulator')" [class]="'flex-1 py-2 rounded-xl text-xs font-bold transition-all ' + (activeTab() === 'simulator' ? 'bg-blue-600 text-white' : 'text-slate-400')">Simulador</button>
+      <button (click)="activeTab.set('formulas')" [class]="'flex-1 py-2 rounded-xl text-xs font-bold transition-all ' + (activeTab() === 'formulas' ? 'bg-blue-600 text-white' : 'text-slate-400')">Fórmulas</button>
+    </div>
+
+    <!-- LAWS -->
+    @if (activeTab() === 'laws') {
+      <div class="flex flex-col gap-4">
+        @for (law of laws; track law.number) {
+          <div class="bg-gradient-to-r {{ law.color }} border {{ law.border }} rounded-2xl p-5">
+            <div class="flex items-center gap-3 mb-2">
+              <div class="w-10 h-10 rounded-xl bg-blue-600/30 border border-blue-500/40 flex items-center justify-center font-black text-blue-300">
+                {{ law.number }}
+              </div>
+              <div>
+                <p class="text-xs text-blue-300/70">{{ law.number }}ª Ley de Newton</p>
+                <p class="text-white font-bold">{{ law.title }}</p>
+              </div>
+            </div>
+            <p class="text-slate-300 text-sm mb-3">{{ law.desc }}</p>
+            <div class="bg-blue-600/10 rounded-xl p-3">
+              <p class="text-blue-200 text-xs">💡 Ejemplo: {{ law.example }}</p>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- SIMULATOR: Free Fall -->
+    @if (activeTab() === 'simulator') {
+      <div class="bg-[#1e293b] border border-slate-700/50 rounded-3xl p-5">
+        <h2 class="text-white font-bold mb-1">🍎 Simulador de Caída Libre</h2>
+        <p class="text-slate-400 text-sm mb-4">Sin resistencia del aire, g = 9.8 m/s²</p>
+
+        <!-- Controls -->
+        <div class="flex flex-col gap-3 mb-4">
+          <div>
+            <div class="flex justify-between text-xs text-slate-400 mb-1">
+              <span>Altura</span><span class="text-blue-400 font-bold">{{ height() }} m</span>
+            </div>
+            <input type="range" min="5" max="200" [value]="height()" (input)="height.set(+$any($event.target).value); resetSim()"
+              class="w-full accent-blue-500" [disabled]="simRunning()" />
+          </div>
+          <div>
+            <div class="flex justify-between text-xs text-slate-400 mb-1">
+              <span>Masa del objeto</span><span class="text-blue-400 font-bold">{{ mass() }} kg</span>
+            </div>
+            <input type="range" min="1" max="100" [value]="mass()" (input)="mass.set(+$any($event.target).value); resetSim()"
+              class="w-full accent-blue-500" [disabled]="simRunning()" />
+          </div>
+        </div>
+
+        <!-- Visual simulator -->
+        <div class="relative bg-slate-900 rounded-2xl h-40 overflow-hidden mb-4 flex items-stretch">
+          <!-- Sky gradient -->
+          <div class="absolute inset-0 bg-gradient-to-b from-blue-900/30 to-transparent"></div>
+          <!-- Ground -->
+          <div class="absolute bottom-0 left-0 right-0 h-4 bg-amber-900/60"></div>
+          <!-- Object -->
+          <div class="absolute left-1/2 -translate-x-1/2 text-2xl transition-none"
+               [style.top.%]="simProgress * 0.8">🍎</div>
+          <!-- Trail -->
+          @if (simRunning()) {
+            <div class="absolute left-1/2 w-0.5 bg-blue-400/30 -translate-x-1/2"
+                 [style.top.%]="0"
+                 [style.height.%]="simProgress * 0.8"></div>
+          }
+        </div>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-3 gap-2 mb-4">
+          <div class="bg-slate-800 rounded-xl p-2 text-center">
+            <p class="text-slate-400 text-xs">Tiempo</p>
+            <p class="text-white font-bold text-sm">{{ simTime().toFixed(2) }}s</p>
+          </div>
+          <div class="bg-slate-800 rounded-xl p-2 text-center">
+            <p class="text-slate-400 text-xs">Velocidad</p>
+            <p class="text-white font-bold text-sm">{{ (g * simTime()).toFixed(1) }} m/s</p>
+          </div>
+          <div class="bg-slate-800 rounded-xl p-2 text-center">
+            <p class="text-slate-400 text-xs">Caído</p>
+            <p class="text-white font-bold text-sm">{{ simY().toFixed(1) }} m</p>
+          </div>
+        </div>
+
+        <!-- Predictions -->
+        <div class="bg-blue-600/10 rounded-xl p-3 mb-4 text-xs text-blue-200">
+          <p>📐 Tiempo de caída: <strong>{{ fallTime.toFixed(2) }}s</strong></p>
+          <p>💨 Velocidad de impacto: <strong>{{ impactSpeed.toFixed(1) }} m/s</strong></p>
+          <p>⚡ Energía de impacto: <strong>{{ impactEnergy.toFixed(0) }} J</strong></p>
+        </div>
+
+        <div class="flex gap-3">
+          <button (click)="startSim()" [disabled]="simRunning()"
+            class="flex-1 bg-blue-600 disabled:bg-slate-700 disabled:text-slate-500 text-white font-bold py-3 rounded-2xl active:scale-95 transition-all">
+            ▶ Soltar
+          </button>
+          <button (click)="resetSim()"
+            class="px-5 bg-slate-700 text-white font-bold py-3 rounded-2xl active:scale-95 transition-all">
+            ↺
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- FORMULAS -->
+    @if (activeTab() === 'formulas') {
+      <div class="flex flex-col gap-3">
+        @for (f of formulas; track f.name) {
+          <div class="bg-[#1e293b] border border-slate-700/50 rounded-2xl p-4 flex items-center gap-4">
+            <div class="bg-blue-600/20 border border-blue-500/30 rounded-xl px-3 py-2 text-center min-w-24 shrink-0">
+              <p class="text-blue-300 font-mono font-bold text-sm">{{ f.formula }}</p>
+              <p class="text-blue-400/60 text-xs">{{ f.unit }}</p>
+            </div>
+            <div>
+              <p class="text-white font-bold text-sm">{{ f.name }}</p>
+              <p class="text-slate-400 text-xs">{{ f.desc }}</p>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Quiz CTA -->
+    <a routerLink="/quiz" [queryParams]="{subject: 'newtonian'}"
+      class="mt-6 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-2xl p-4 flex items-center gap-4 active:scale-95 transition-all block">
+      <span class="text-3xl">🎯</span>
+      <div>
+        <p class="text-white font-bold">¡Pon a prueba lo aprendido!</p>
+        <p class="text-blue-100 text-sm">Quiz de Física Newtoniana</p>
+      </div>
+    </a>
+  </div>
+</div>
