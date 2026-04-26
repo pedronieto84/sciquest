@@ -7,6 +7,7 @@ import { SciUser, LEVEL_XP_THRESHOLDS } from '../../core/models/user.model';
 import { Auth, user } from '@angular/fire/auth';
 import { switchMap, of, Subscription } from 'rxjs';
 import { PromoCodeComponent } from '../../shared/promo-code/promo-code.component';
+import { QuizService } from '../../core/services/quiz.service';
 
 @Component({
   selector: 'app-home',
@@ -18,6 +19,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private firestore = inject(Firestore);
   private auth = inject(Auth);
+  private quizService = inject(QuizService);
 
   sciUser = signal<SciUser | null>(null);
   private sub?: Subscription;
@@ -38,6 +40,9 @@ export class HomeComponent implements OnInit, OnDestroy {
         return docData(this.authService.getUserDoc(u.uid)) as any;
       }),
     ).subscribe(u => this.sciUser.set(u as SciUser | null));
+
+    // Precarga todas las preguntas en background para que el quiz sea instantáneo
+    this.quizService.preloadAll();
   }
 
   ngOnDestroy() { this.sub?.unsubscribe(); }
