@@ -9,7 +9,7 @@ import { SciUser } from '../../core/models/user.model';
 import { Challenge } from '../../core/models/challenge.model';
 import { QuizService } from '../../core/services/quiz.service';
 import { QuizQuestion, Subject } from '../../core/models/quiz.model';
-import { switchMap, of, Subscription, Observable } from 'rxjs';
+import { switchMap, of, Subscription, Observable, take } from 'rxjs';
 
 type CompState = 'lobby' | 'create' | 'waiting' | 'playing' | 'waiting_results' | 'results';
 
@@ -174,7 +174,7 @@ export class CompetitionComponent implements OnInit, OnDestroy {
     const subject = challenge.subject;
     const subjectToLoad: Subject = (subject === 'mixed' ? 'chemistry' : subject) as Subject;
 
-    this.quizService.getAllSubjectQuestions(subjectToLoad).pipe(take(1)).subscribe(qs => {
+    this.quizService.getAllSubjectQuestions(subjectToLoad).pipe(take(1)).subscribe((qs: QuizQuestion[]) => {
       const selected = qs.slice(0, 10);
       if (selected.length === 0) {
         this.error.set('No hay preguntas disponibles para esta materia');
