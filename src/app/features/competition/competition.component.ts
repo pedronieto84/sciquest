@@ -9,7 +9,7 @@ import { SciUser } from '../../core/models/user.model';
 import { Challenge } from '../../core/models/challenge.model';
 import { QuizService } from '../../core/services/quiz.service';
 import { QuizQuestion, Subject } from '../../core/models/quiz.model';
-import { switchMap, of, Subscription, Observable, take } from 'rxjs';
+import { switchMap, of, Subscription, Observable, take, distinctUntilChanged } from 'rxjs';
 
 type CompState = 'lobby' | 'create' | 'waiting' | 'playing' | 'waiting_results' | 'results';
 
@@ -57,16 +57,28 @@ export class CompetitionComponent implements OnInit, OnDestroy {
   ];
 
   ngOnInit() {
+    // Solo cargamos datos una vez al iniciar (take(1) evita recargas en cada cambio del user doc)
     this.userSub = user(this.auth).pipe(
       switchMap(u => u
         ? (docData(doc(this.firestore, `users/${u.uid}`)) as Observable<SciUser>)
         : of(null)
-      )
+      ),
+      take(1),
     ).subscribe(async (u: SciUser | null) => {
       this.currentUser.set(u);
       if (u) {
         await this.loadData();
       }
+    });
+
+    // Suscripción separada solo para mantener currentUser actualizado (sin recargar datos)
+    user(this.auth).pipe(
+      switchMap(u => u
+        ? (docData(doc(this.firestore, `users/${u.uid}`)) as Observable<SciUser>)
+        : of(null)
+      ),
+    ).subscribe(u => {
+      if (u) this.currentUser.set(u as SciUser);
     });
   }
 
@@ -281,11 +293,16 @@ export class CompetitionComponent implements OnInit, OnDestroy {
       }));
   }
 
-  goToCreate() {
+  async goToCreate() {
     this.selectedOpponents.set([]);
     this.selectedSubject.set('mixed');
     this.error.set('');
+    this.loading.set(false); // Seguridad: nunca entrar en create con loading activo
     this.state.set('create');
+    // Recargar la lista de usuarios al entrar (por si no cargó en ngOnInit)
+    if (this.allUsers().length === 0) {
+      await this.loadData();
+    }
   }
 
   goToLobby() {
