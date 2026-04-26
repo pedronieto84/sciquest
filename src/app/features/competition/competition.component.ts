@@ -9,7 +9,7 @@ import { SciUser } from '../../core/models/user.model';
 import { Challenge } from '../../core/models/challenge.model';
 import { QuizService } from '../../core/services/quiz.service';
 import { QuizQuestion, Subject } from '../../core/models/quiz.model';
-import { switchMap, of, Subscription, Observable, take, filter } from 'rxjs';
+import { switchMap, of, Subscription, Observable, take, filter, firstValueFrom } from 'rxjs';
 
 type CompState = 'lobby' | 'create' | 'waiting' | 'playing' | 'waiting_results' | 'results';
 
@@ -39,7 +39,8 @@ export class CompetitionComponent implements OnInit, OnDestroy {
   showExplanation = signal(false);
   myScore = signal(0);
   timeLeft = signal(20);
-  loading = signal(false);
+  loading = signal(false);       // cargando lista de usuarios
+  creating = signal(false);      // creando/aceptando reto
   error = signal('');
 
   private userSub?: Subscription;
@@ -56,24 +57,25 @@ export class CompetitionComponent implements OnInit, OnDestroy {
     { id: 'astronomy', label: 'Astronomía', emoji: '🔭' },
   ];
 
-  ngOnInit() {
-    // Mantener currentUser actualizado en tiempo real (sin recargar la lista de usuarios)
-    this.userSub = user(this.auth).pipe(
-      switchMap(u => u
-        ? (docData(doc(this.firestore, `users/${u.uid}`)) as Observable<SciUser>)
-        : of(null)
-      ),
-    ).subscribe(u => {
-      if (u) this.currentUser.set(u as SciUser);
-    });
+  async ngOnInit() {
+    // 1. Espera al usuario de Firebase Auth
+    const fireUser = await firstValueFrom(
+      user(this.auth).pipe(filter(u => !!u))
+    );
+    if (!fireUser) return;
 
-    // Carga inicial de datos: espera al primer usuario autenticado real (ignora null inicial)
-    user(this.auth).pipe(
-      filter(u => !!u),
-      take(1),
-    ).subscribe(async () => {
-      await this.loadData();
-    });
+    // 2. Espera al documento de Firestore (necesario para tener el uid correcto al filtrar)
+    const sciUser = await firstValueFrom(
+      docData(doc(this.firestore, `users/${fireUser.uid}`)) as Observable<SciUser>
+    );
+    this.currentUser.set(sciUser);
+
+    // 3. Carga lista de usuarios y retos pendientes
+    await this.loadData();
+
+    // 4. Mantener currentUser actualizado en tiempo real
+    this.userSub = (docData(doc(this.firestore, `users/${fireUser.uid}`)) as Observable<SciUser>)
+      .subscribe(u => { if (u) this.currentUser.set(u); });
   }
 
   async loadData() {
@@ -109,7 +111,7 @@ export class CompetitionComponent implements OnInit, OnDestroy {
 
   async createChallenge() {
     if (!this.selectedOpponents().length || !this.currentUser()) return;
-    this.loading.set(true);
+    this.creating.set(true);
     this.error.set('');
     try {
       const challengeId = await this.challengeService.createChallenge(
@@ -122,7 +124,6 @@ export class CompetitionComponent implements OnInit, OnDestroy {
       this.challengeUnsub = this.challengeService.watchChallenge(challengeId, c => {
         this.currentChallenge.set(c);
         if (c.status === 'active' && this.state() === 'waiting') {
-          // Opponent accepted — start playing
           this.loadQuestionsAndPlay(c);
         }
         if (c.status === 'finished') {
@@ -133,11 +134,11 @@ export class CompetitionComponent implements OnInit, OnDestroy {
     } catch (e: any) {
       this.error.set(e.message || 'Error al crear el reto');
     }
-    this.loading.set(false);
+    this.creating.set(false);
   }
 
   async acceptChallenge(challenge: Challenge) {
-    this.loading.set(true);
+    this.creating.set(true);
     this.error.set('');
     try {
       // Accept — sets status to 'active'
@@ -159,7 +160,7 @@ export class CompetitionComponent implements OnInit, OnDestroy {
     } catch (e: any) {
       this.error.set(e.message || 'Error al aceptar el reto');
     }
-    this.loading.set(false);
+    this.creating.set(false);
   }
 
   private loadQuestionsAndPlay(challenge: Challenge) {
