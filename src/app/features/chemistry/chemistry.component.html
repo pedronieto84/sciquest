@@ -15,6 +15,16 @@
     </div>
   </div>
 
+  <!-- THEORY MODE -->
+  @if (gameMode() === 'theory') {
+    <div class="max-w-lg mx-auto px-4 mt-5">
+      <button (click)="backToExplore()" class="text-slate-400 hover:text-white flex items-center gap-1 text-sm mb-4">
+        ← Volver
+      </button>
+      <app-theory-slider [cards]="theoryCards()"></app-theory-slider>
+    </div>
+  }
+
   <!-- EXPLORE MODE -->
   @if (gameMode() === 'explore') {
     <div class="max-w-lg mx-auto px-4 mt-5">
@@ -32,14 +42,26 @@
         <button (click)="startGuessGame('guess-element')"
           class="bg-emerald-600/20 border border-emerald-500/30 rounded-2xl p-3 text-left active:scale-95 transition-all">
           <p class="text-lg mb-1">🎯</p>
-          <p class="text-emerald-300 font-bold text-sm">¿Qué elemento es?</p>
-          <p class="text-slate-400 text-xs">Ve el símbolo, adivina el nombre</p>
+          <p class="text-emerald-300 font-bold text-sm">¿Qué elemento?</p>
+          <p class="text-slate-400 text-xs">Adivina el nombre</p>
         </button>
         <button (click)="startGuessGame('guess-symbol')"
           class="bg-teal-600/20 border border-teal-500/30 rounded-2xl p-3 text-left active:scale-95 transition-all">
           <p class="text-lg mb-1">🔤</p>
-          <p class="text-teal-300 font-bold text-sm">¿Cuál es el símbolo?</p>
-          <p class="text-slate-400 text-xs">Ve el nombre, adivina el símbolo</p>
+          <p class="text-teal-300 font-bold text-sm">¿Qué símbolo?</p>
+          <p class="text-slate-400 text-xs">Adivina el símbolo</p>
+        </button>
+        <button (click)="gameMode.set('theory')"
+          class="bg-indigo-600/20 border border-indigo-500/30 rounded-2xl p-3 text-left active:scale-95 transition-all">
+          <p class="text-lg mb-1">📖</p>
+          <p class="text-indigo-300 font-bold text-sm">Teoría</p>
+          <p class="text-slate-400 text-xs">Aprende química</p>
+        </button>
+        <button (click)="gameMode.set('table')"
+          class="bg-fuchsia-600/20 border border-fuchsia-500/30 rounded-2xl p-3 text-left active:scale-95 transition-all">
+          <p class="text-lg mb-1">🔬</p>
+          <p class="text-fuchsia-300 font-bold text-sm">Tabla Periódica</p>
+          <p class="text-slate-400 text-xs">Vista clásica 18×7</p>
         </button>
       </div>
 
@@ -61,7 +83,7 @@
         <p class="text-slate-400 text-xs font-bold mb-2">Leyenda</p>
         <div class="flex flex-wrap gap-2">
           @for (cat of categories; track cat.key) {
-            <span class="text-xs px-2 py-1 rounded-lg border {{ categoryColors[cat.key] }}">{{ cat.label }}</span>
+            <button (click)="selectedCategory.set(cat.key)" class="text-xs px-2 py-1 rounded-lg border text-left active:scale-95 transition-all cursor-pointer {{ categoryColors[cat.key] }}">{{ cat.label }}</button>
           }
         </div>
       </div>
@@ -120,6 +142,93 @@
     </div>
   }
 
+  <!-- TABLE MODE -->
+  @if (gameMode() === 'table') {
+    <div class="px-2 pt-4 pb-8 max-w-5xl mx-auto">
+      <button (click)="backToExplore()" class="text-slate-400 hover:text-white flex items-center gap-1 text-sm mb-4 px-2">
+        ← Volver
+      </button>
+
+      <h2 class="text-white font-black text-lg px-2 mb-3">🔬 Tabla Periódica de los Elementos</h2>
+
+      <!-- Legend -->
+      <div class="px-2 mb-4">
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-1.5">
+          @for (cat of categories; track cat.key) {
+            <button (click)="selectedCategory.set(cat.key)" class="text-[10px] px-2 py-1 rounded-lg border text-left active:scale-95 transition-all cursor-pointer {{ categoryColors[cat.key] }}">{{ cat.label }}</button>
+          }
+          <span class="text-[10px] px-2 py-1 rounded-lg border bg-pink-900/60 border-pink-500/40 text-pink-300">Lantánidos</span>
+          <span class="text-[10px] px-2 py-1 rounded-lg border bg-blue-900/60 border-blue-500/40 text-blue-300">Post-transición</span>
+        </div>
+      </div>
+
+      <!-- Main periodic table grid -->
+      <div class="overflow-x-auto pb-2">
+        <div class="pt-grid" style="display:grid; grid-template-columns: repeat(18, minmax(38px, 1fr)); gap: 2px; min-width: 700px;">
+          @for (row of mainGridCells(); track $index) {
+            @for (cell of row; track $index) {
+              @if (cell === null) {
+                <div class="pt-empty" style="aspect-ratio:1;"></div>
+              } @else if ($any(cell).placeholder) {
+                <div class="flex items-center justify-center rounded text-[8px] text-slate-400 border border-dashed border-slate-600/50 cursor-default" style="aspect-ratio:1;">
+                  <span class="text-center leading-tight">{{ $any(cell).placeholder === '57-71' ? '57-71 ★' : '89-103 ★' }}</span>
+                </div>
+              } @else {
+                <button (click)="selectElement($any(cell))"
+                  class="pt-cell rounded flex flex-col items-center justify-center border text-center {{ categoryColors[$any(cell).category] || 'bg-slate-800 border-slate-700 text-slate-300' }}"
+                  style="aspect-ratio:1; padding:1px; transition: transform 0.15s; cursor:pointer;"
+                  [style.font-size]="'1px'">
+                  <span class="text-[7px] leading-none opacity-70">{{ $any(cell).atomicNumber }}</span>
+                  <span class="text-[11px] font-black leading-tight">{{ $any(cell).symbol }}</span>
+                  <span class="text-[6px] leading-none truncate w-full text-center opacity-80">{{ $any(cell).name }}</span>
+                </button>
+              }
+            }
+          }
+        </div>
+      </div>
+
+      <!-- Spacer -->
+      <div class="h-3"></div>
+
+      <!-- Lanthanides row -->
+      <div class="px-2 mb-1">
+        <p class="text-pink-300 text-[10px] font-bold mb-1">★ Lantánidos (57-71)</p>
+      </div>
+      <div class="overflow-x-auto pb-2">
+        <div style="display:grid; grid-template-columns: repeat(15, minmax(38px, 1fr)); gap: 2px; min-width: 580px;">
+          @for (el of lanthanides(); track el.atomicNumber) {
+            <button (click)="selectElement(el)"
+              class="pt-cell rounded flex flex-col items-center justify-center border text-center {{ categoryColors[el.category] || 'bg-slate-800 border-slate-700 text-slate-300' }}"
+              style="aspect-ratio:1; padding:1px; transition: transform 0.15s; cursor:pointer;">
+              <span class="text-[7px] leading-none opacity-70">{{ el.atomicNumber }}</span>
+              <span class="text-[11px] font-black leading-tight">{{ el.symbol }}</span>
+              <span class="text-[6px] leading-none truncate w-full text-center opacity-80">{{ el.name }}</span>
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Actinides row -->
+      <div class="px-2 mb-1">
+        <p class="text-teal-300 text-[10px] font-bold mb-1">★ Actínidos (89-103)</p>
+      </div>
+      <div class="overflow-x-auto pb-2">
+        <div style="display:grid; grid-template-columns: repeat(15, minmax(38px, 1fr)); gap: 2px; min-width: 580px;">
+          @for (el of actinides(); track el.atomicNumber) {
+            <button (click)="selectElement(el)"
+              class="pt-cell rounded flex flex-col items-center justify-center border text-center {{ categoryColors[el.category] || 'bg-slate-800 border-slate-700 text-slate-300' }}"
+              style="aspect-ratio:1; padding:1px; transition: transform 0.15s; cursor:pointer;">
+              <span class="text-[7px] leading-none opacity-70">{{ el.atomicNumber }}</span>
+              <span class="text-[11px] font-black leading-tight">{{ el.symbol }}</span>
+              <span class="text-[6px] leading-none truncate w-full text-center opacity-80">{{ el.name }}</span>
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
   <!-- Element detail modal -->
   @if (selected()) {
     <div class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end justify-center p-4" (click)="closeDetail()">
@@ -140,3 +249,68 @@
     </div>
   }
 </div>
+
+<!-- POPUP: Información de categoría -->
+@if (selectedCategory() && categoryInfo[selectedCategory()!]) {
+  <div class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end justify-center p-4"
+       (click)="selectedCategory.set(null)">
+    <div class="bg-[#1e293b] rounded-3xl w-full max-w-lg border border-slate-700/50 shadow-2xl overflow-hidden"
+         (click)="$event.stopPropagation()">
+
+      <!-- Header con color de categoría -->
+      <div class="px-5 pt-5 pb-4 border-b border-slate-700/50">
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <span class="text-4xl">{{ categoryInfo[selectedCategory()!].emoji }}</span>
+            <div>
+              <h2 class="text-white font-black text-xl leading-tight">{{ categoryInfo[selectedCategory()!].title }}</h2>
+              <span class="text-xs px-2 py-0.5 rounded-full border {{ categoryColors[selectedCategory()!] }} mt-1 inline-block">Grupo de elementos</span>
+            </div>
+          </div>
+          <button (click)="selectedCategory.set(null)" class="text-slate-400 hover:text-white text-2xl leading-none mt-1">✕</button>
+        </div>
+      </div>
+
+      <!-- Contenido scrollable -->
+      <div class="overflow-y-auto max-h-[60vh] px-5 py-4 space-y-4">
+
+        <!-- Descripción -->
+        <p class="text-slate-300 text-sm leading-relaxed">{{ categoryInfo[selectedCategory()!].desc }}</p>
+
+        <!-- Propiedades -->
+        <div>
+          <h3 class="text-white font-bold text-sm mb-2">⚗️ Propiedades</h3>
+          <ul class="space-y-1.5">
+            @for (prop of categoryInfo[selectedCategory()!].props; track prop) {
+              <li class="flex items-start gap-2 text-slate-300 text-sm">
+                <span class="text-emerald-400 mt-0.5 shrink-0">•</span>
+                <span>{{ prop }}</span>
+              </li>
+            }
+          </ul>
+        </div>
+
+        <!-- Ejemplos -->
+        <div class="bg-slate-800/60 rounded-2xl p-3 border border-slate-700/40">
+          <h3 class="text-white font-bold text-sm mb-1">🔬 Ejemplos</h3>
+          <p class="text-slate-300 text-sm">{{ categoryInfo[selectedCategory()!].examples }}</p>
+        </div>
+
+        <!-- Fun fact -->
+        <div class="bg-amber-500/10 rounded-2xl p-3 border border-amber-500/20">
+          <h3 class="text-amber-400 font-bold text-sm mb-1">💡 ¿Sabías que...?</h3>
+          <p class="text-slate-300 text-sm leading-relaxed">{{ categoryInfo[selectedCategory()!].funFact }}</p>
+        </div>
+
+      </div>
+
+      <!-- Botón cerrar -->
+      <div class="px-5 pb-5 pt-3 border-t border-slate-700/50">
+        <button (click)="selectedCategory.set(null)"
+                class="w-full bg-slate-700 hover:bg-slate-600 text-white font-semibold py-3 rounded-2xl transition-all active:scale-95">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+}

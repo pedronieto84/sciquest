@@ -1,0 +1,50 @@
+<div class="min-h-screen bg-[#0f172a] flex flex-col">
+
+  <!-- Header -->
+  <div class="bg-[#1e293b] px-4 pt-12 pb-4 border-b border-slate-700/50">
+    <div class="max-w-lg mx-auto flex items-center gap-3">
+      <a routerLink="/home" class="text-slate-400 hover:text-white transition-colors">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+      </a>
+      <div class="flex items-center gap-3 flex-1">
+        <div class="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-xl font-bold">
+          {{ sciUser()?.avatar || '🔬' }}
+        </div>
+        <div>
+          <p class="text-white font-bold text-base leading-tight">{{ sciUser()?.displayName || 'Mi Cuenta' }}</p>
+          <p class="text-slate-400 text-xs">@{{ sciUser()?.username || '...' }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="max-w-lg mx-auto mt-4 grid grid-cols-3 gap-1 bg-slate-800/60 rounded-2xl p-1">
+      <button (click)="goTab('amigos')"
+        [class]="activeTab() === 'amigos'
+          ? 'bg-indigo-600 text-white font-bold rounded-xl py-2 text-sm transition-all'
+          : 'text-slate-400 hover:text-white rounded-xl py-2 text-sm transition-all'">
+        👥 Amigos
+      </button>
+      <button (click)="goTab('chat')"
+        [class]="activeTab() === 'chat'
+          ? 'bg-indigo-600 text-white font-bold rounded-xl py-2 text-sm transition-all'
+          : 'text-slate-400 hover:text-white rounded-xl py-2 text-sm transition-all'">
+        💬 Chat
+      </button>
+      <button (click)="goTab('buscar-amigos')"
+        [class]="activeTab() === 'buscar-amigos'
+          ? 'bg-indigo-600 text-white font-bold rounded-xl py-2 text-sm transition-all'
+          : 'text-slate-400 hover:text-white rounded-xl py-2 text-sm transition-all'">
+        🔍 Buscar
+      </button>
+    </div>
+  </div>
+
+  <!-- Content via child routes -->
+  <div class="flex-1 overflow-y-auto">
+    <router-outlet></router-outlet>
+  </div>
+
+</div>

@@ -2,8 +2,9 @@ import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { Firestore, collection, query, orderBy, limit, getDocs } from '@angular/fire/firestore';
+import { SciUser } from '../../core/models/user.model';
 
-interface LeaderEntry { uid: string; displayName: string; avatar: string; xp: number; level: number; }
+interface LeaderEntry { uid: string; username: string; displayName: string; avatar: string; xp: number; level: number; }
 
 @Component({
   selector: 'app-leaderboard',
@@ -27,5 +28,14 @@ export class LeaderboardComponent implements OnInit {
 
   medal(i: number): string {
     return ['🥇', '🥈', '🥉'][i] || `${i + 1}`;
+  }
+
+  getAvatar(entry: LeaderEntry): string {
+    if (!entry.avatar || entry.avatar.startsWith('http')) return '🔬';
+    return entry.avatar;
+  }
+
+  getDisplayName(entry: LeaderEntry): string {
+    return entry.username || entry.displayName || 'Científico';
   }
 }

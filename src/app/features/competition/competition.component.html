@@ -1,37 +1,413 @@
-<div class="min-h-screen bg-[#0f172a] pb-24">
-  <div class="bg-gradient-to-br from-amber-600 to-orange-600 px-4 pt-12 pb-6">
-    <div class="max-w-lg mx-auto flex items-center gap-3">
-      <a routerLink="/home" class="text-white/70 hover:text-white">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-        </svg>
-      </a>
+<!-- ===== LOBBY ===== -->
+@if (state() === 'lobby') {
+  <div class="min-h-screen bg-[#0f172a] pb-24">
+    <!-- Header -->
+    <div class="bg-gradient-to-br from-amber-600 to-orange-600 px-4 pt-12 pb-6">
+      <div class="max-w-lg mx-auto flex items-center gap-3">
+        <a routerLink="/home" class="text-white/70 hover:text-white">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+          </svg>
+        </a>
+        <div>
+          <h1 class="text-2xl font-black text-white">🏆 Competiciones</h1>
+          <p class="text-amber-200 text-sm">¡Demuestra tu talento!</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="max-w-lg mx-auto px-4 mt-6 flex flex-col gap-4">
+      <!-- New Challenge Button -->
+      <button (click)="goToCreate()"
+        class="w-full bg-gradient-to-r from-amber-500 to-orange-600 rounded-2xl p-4 flex items-center justify-center gap-3 active:scale-95 transition-all shadow-lg shadow-orange-600/30">
+        <span class="text-2xl">⚔️</span>
+        <span class="text-white font-black text-lg">Nuevo Reto</span>
+      </button>
+
+      <!-- Loading -->
+      @if (loading()) {
+        <div class="flex justify-center py-8">
+          <div class="w-10 h-10 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      }
+
+      <!-- Pending Challenges -->
+      @if (pendingChallenges().length > 0) {
+        <div>
+          <h2 class="text-white font-bold text-lg mb-3">📩 Retos Pendientes</h2>
+          <div class="flex flex-col gap-3">
+            @for (challenge of pendingChallenges(); track challenge.id) {
+              <div class="bg-[#1e293b] border border-amber-500/30 rounded-2xl p-4 flex items-center gap-3">
+                <span class="text-3xl">{{ challenge.participantAvatars?.[challenge.createdBy] || '🧑‍🔬' }}</span>
+                <div class="flex-1 min-w-0">
+                  <p class="text-white font-bold truncate">{{ challenge.participantNames?.[challenge.createdBy] || 'Jugador' }}</p>
+                  <p class="text-slate-400 text-sm">te reta en {{ challenge.subject === 'mixed' ? 'Mixto' : challenge.subject }}</p>
+                </div>
+                <button (click)="acceptChallenge(challenge)"
+                  class="bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold px-4 py-2 rounded-xl active:scale-95 transition-all text-sm">
+                  Aceptar
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- No pending -->
+      @if (!loading() && pendingChallenges().length === 0) {
+        <div class="text-center py-8">
+          <div class="text-6xl mb-3">⚡</div>
+          <p class="text-slate-400">No hay retos pendientes</p>
+          <p class="text-slate-500 text-sm mt-1">¡Crea uno y reta a tus amigos!</p>
+        </div>
+      }
+    </div>
+  </div>
+}
+
+<!-- ===== CREATE ===== -->
+@if (state() === 'create') {
+  <div class="min-h-screen bg-[#0f172a] pb-24">
+    <!-- Header -->
+    <div class="bg-gradient-to-br from-amber-600 to-orange-600 px-4 pt-12 pb-6">
+      <div class="max-w-lg mx-auto flex items-center gap-3">
+        <button (click)="goToLobby()" class="text-white/70 hover:text-white">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+          </svg>
+        </button>
+        <div>
+          <h1 class="text-2xl font-black text-white">⚔️ Nuevo Reto</h1>
+          <p class="text-amber-200 text-sm">Elige oponentes y asignatura</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="max-w-lg mx-auto px-4 mt-6 flex flex-col gap-5">
+      <!-- Subject pills -->
       <div>
-        <h1 class="text-2xl font-black text-white">🏆 Competiciones</h1>
-        <p class="text-amber-200 text-sm">¡Demuestra tu talento!</p>
+        <h3 class="text-white font-bold mb-2">📚 Asignatura</h3>
+        <div class="flex gap-2 overflow-x-auto pb-2">
+          @for (sub of subjects; track sub.id) {
+            <button (click)="selectedSubject.set(sub.id)"
+              [class]="selectedSubject() === sub.id
+                ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white border-transparent'
+                : 'bg-[#1e293b] text-slate-300 border-slate-600 hover:border-amber-500/50'"
+              class="flex items-center gap-1.5 px-4 py-2 rounded-full border text-sm font-semibold whitespace-nowrap transition-all">
+              <span>{{ sub.emoji }}</span>
+              <span>{{ sub.label }}</span>
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- User list -->
+      <div>
+        <h3 class="text-white font-bold mb-2">👥 Elige oponentes</h3>
+        @if (loading()) {
+          <div class="flex justify-center py-6">
+            <div class="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        }
+        <div class="flex flex-col gap-2">
+          @for (u of allUsers(); track u.uid) {
+            <button (click)="toggleOpponent(u.uid)"
+              [class]="selectedOpponents().includes(u.uid)
+                ? 'border-amber-500 bg-amber-500/10'
+                : 'border-slate-700/50 bg-[#1e293b]'"
+              class="border rounded-2xl p-3 flex items-center gap-3 transition-all active:scale-[0.98]">
+              <span class="text-3xl">{{ u.avatar || '🧑‍🔬' }}</span>
+              <div class="flex-1 min-w-0 text-left">
+                <p class="text-white font-bold truncate">{{ u.displayName }}</p>
+                <p class="text-slate-400 text-xs">Nivel {{ u.level }} · {{ u.xp }} XP</p>
+              </div>
+              @if (selectedOpponents().includes(u.uid)) {
+                <div class="w-7 h-7 rounded-full bg-amber-500 flex items-center justify-center">
+                  <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                  </svg>
+                </div>
+              } @else {
+                <div class="w-7 h-7 rounded-full border-2 border-slate-600"></div>
+              }
+            </button>
+          }
+        </div>
+        @if (!loading() && allUsers().length === 0) {
+          <p class="text-slate-500 text-center py-4">No hay otros usuarios registrados</p>
+        }
+      </div>
+
+      <!-- Launch button -->
+      <button (click)="createChallenge()"
+        [disabled]="selectedOpponents().length === 0 || loading()"
+        [class]="selectedOpponents().length > 0
+          ? 'bg-gradient-to-r from-amber-500 to-orange-600 shadow-lg shadow-orange-600/30'
+          : 'bg-slate-700 opacity-50 cursor-not-allowed'"
+        class="w-full rounded-2xl p-4 flex items-center justify-center gap-3 active:scale-95 transition-all mt-2">
+        <span class="text-2xl">⚔️</span>
+        <span class="text-white font-black text-lg">
+          Lanzar Reto ({{ selectedOpponents().length }})
+        </span>
+      </button>
+
+      @if (error()) {
+        <div class="bg-red-500/20 border border-red-500/50 rounded-xl p-3 text-red-300 text-sm text-center">
+          {{ error() }}
+        </div>
+      }
+    </div>
+  </div>
+}
+
+<!-- ===== PLAYING ===== -->
+@if (state() === 'playing') {
+  <div class="min-h-screen bg-[#0f172a] flex flex-col">
+    <!-- Top bar -->
+    <div class="px-4 pt-4 pb-2">
+      <div class="max-w-lg mx-auto flex items-center justify-between">
+        <span class="text-slate-400 text-sm font-bold">{{ currentIndex() + 1 }}/{{ questions().length }}</span>
+        <span class="text-amber-400 font-black text-lg">{{ myScore() }} pts</span>
+      </div>
+    </div>
+
+    <!-- Timer bar -->
+    <div class="px-4 mb-4">
+      <div class="max-w-lg mx-auto">
+        <div class="h-2 bg-slate-800 rounded-full overflow-hidden">
+          <div class="h-full rounded-full transition-all duration-1000 ease-linear"
+            [style.width.%]="(timeLeft() / 20) * 100"
+            [class]="timeLeft() > 10 ? 'bg-green-500' : timeLeft() > 5 ? 'bg-yellow-500' : 'bg-red-500'">
+          </div>
+        </div>
+        <p class="text-center mt-1"
+          [class]="timeLeft() > 5 ? 'text-slate-400' : 'text-red-400 font-bold animate-pulse'"
+          style="font-size: 0.75rem;">
+          ⏱️ {{ timeLeft() }}s
+        </p>
+      </div>
+    </div>
+
+    <!-- Question -->
+    @if (currentQuestion) {
+      <div class="flex-1 px-4 flex flex-col">
+        <div class="max-w-lg mx-auto w-full flex-1 flex flex-col gap-4">
+          <div class="bg-[#1e293b] border border-slate-700/50 rounded-2xl p-5">
+            <p class="text-white text-lg font-bold text-center leading-relaxed">{{ currentQuestion.question }}</p>
+          </div>
+
+          <!-- Options grid 2x2 -->
+          <div class="grid grid-cols-2 gap-3 flex-1">
+            @for (opt of currentQuestion.options; track $index; let i = $index) {
+              <button (click)="selectAnswer(i)"
+                [disabled]="selectedOption() !== null"
+                [class]="selectedOption() === null
+                  ? 'bg-[#1e293b] border-slate-600 hover:border-amber-500 active:scale-95'
+                  : i === currentQuestion.correctIndex
+                    ? 'bg-green-500/20 border-green-500'
+                    : selectedOption() === i
+                      ? 'bg-red-500/20 border-red-500'
+                      : 'bg-[#1e293b] border-slate-700 opacity-50'"
+                class="border-2 rounded-2xl p-3 text-left transition-all flex items-start gap-2">
+                <span class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5"
+                  [class]="selectedOption() === null
+                    ? 'bg-slate-700 text-slate-300'
+                    : i === currentQuestion.correctIndex
+                      ? 'bg-green-500 text-white'
+                      : selectedOption() === i
+                        ? 'bg-red-500 text-white'
+                        : 'bg-slate-700 text-slate-500'">
+                  {{ ['A','B','C','D'][i] }}
+                </span>
+                <span class="text-sm"
+                  [class]="selectedOption() !== null && i === currentQuestion.correctIndex
+                    ? 'text-green-300 font-bold'
+                    : selectedOption() === i && i !== currentQuestion.correctIndex
+                      ? 'text-red-300'
+                      : 'text-slate-200'">
+                  {{ opt }}
+                </span>
+              </button>
+            }
+          </div>
+
+          <!-- Feedback -->
+          @if (showExplanation() && selectedOption() !== null) {
+            <div class="rounded-2xl p-3 text-center text-sm animate-fade-in"
+              [class]="selectedOption() === currentQuestion.correctIndex
+                ? 'bg-green-500/20 border border-green-500/50 text-green-300'
+                : 'bg-red-500/20 border border-red-500/50 text-red-300'">
+              @if (selectedOption() === currentQuestion.correctIndex) {
+                <span class="font-bold">✅ ¡Correcto! +10 pts</span>
+              } @else {
+                <span class="font-bold">❌ Incorrecto. -3 pts</span>
+              }
+              <p class="text-slate-400 text-xs mt-1">{{ currentQuestion.explanation }}</p>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+}
+
+<!-- ===== WAITING (for opponent to accept) ===== -->
+@if (state() === 'waiting') {
+  <div class="min-h-screen bg-[#0f172a] flex items-center justify-center px-4">
+    <div class="max-w-lg mx-auto text-center">
+      <div class="w-16 h-16 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
+      <h2 class="text-white text-2xl font-black mb-2">Esperando oponente...</h2>
+      <p class="text-slate-400 mb-6">Tu reto ha sido enviado. Esperando a que lo acepten.</p>
+      <div class="text-6xl mb-4">⚔️</div>
+      <button (click)="goToLobby()"
+        class="bg-[#1e293b] border border-slate-600 text-slate-300 font-bold px-6 py-3 rounded-xl active:scale-95 transition-all mt-4">
+        Cancelar
+      </button>
+    </div>
+  </div>
+}
+
+<!-- ===== WAITING RESULTS (quiz done, waiting for others) ===== -->
+@if (state() === 'waiting_results') {
+  <div class="min-h-screen bg-[#0f172a] flex items-center justify-center px-4">
+    <div class="max-w-lg mx-auto text-center">
+      <div class="w-16 h-16 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
+      <h2 class="text-white text-2xl font-black mb-2">Esperando a los demás...</h2>
+      <p class="text-slate-400 mb-6">Los otros jugadores aún están respondiendo</p>
+      <div class="bg-[#1e293b] border border-slate-700/50 rounded-2xl p-5 inline-block">
+        <p class="text-slate-400 text-sm">Tu puntuación</p>
+        <p class="text-amber-400 text-4xl font-black">{{ myScore() }} pts</p>
       </div>
     </div>
   </div>
+}
 
-  <div class="max-w-lg mx-auto px-4 mt-6 text-center">
-    <div class="text-8xl mb-4 animate-bounce">🚀</div>
-    <h2 class="text-white text-2xl font-black mb-2">¡Próximamente!</h2>
-    <p class="text-slate-400 mb-6">Las competiciones multijugador están en desarrollo. Pronto podrás desafiar a tus amigos en tiempo real.</p>
-
-    <div class="bg-[#1e293b] border border-slate-700/50 rounded-2xl p-5 text-left">
-      <h3 class="text-white font-bold mb-3">📋 Lo que viene:</h3>
-      <ul class="flex flex-col gap-2 text-slate-300 text-sm">
-        <li class="flex gap-2">⚡ <span>Duelos 1v1 en tiempo real</span></li>
-        <li class="flex gap-2">🏆 <span>Torneos semanales por materia</span></li>
-        <li class="flex gap-2">👥 <span>Equipos de hasta 4 jugadores</span></li>
-        <li class="flex gap-2">🎁 <span>Premios: XP extra y monedas</span></li>
-        <li class="flex gap-2">📊 <span>Ranking global y por clase</span></li>
-      </ul>
+<!-- ===== RESULTS ===== -->
+@if (state() === 'results') {
+  <div class="min-h-screen bg-[#0f172a] pb-24 relative overflow-hidden">
+    <!-- Confetti CSS -->
+    <div class="confetti-container">
+      @for (i of [1,2,3,4,5,6,7,8,9,10,11,12]; track i) {
+        <div class="confetti" [style.left.%]="i * 8" [style.animation-delay]="i * 0.15 + 's'"></div>
+      }
     </div>
 
-    <a routerLink="/quiz" class="mt-5 bg-gradient-to-r from-amber-600 to-orange-600 rounded-2xl p-4 flex items-center justify-center gap-3 active:scale-95 transition-all">
-      <span class="text-2xl">🎯</span>
-      <span class="text-white font-bold">Mientras tanto, ¡haz un Quiz!</span>
-    </a>
+    <!-- Header -->
+    <div class="bg-gradient-to-br from-amber-600 to-orange-600 px-4 pt-12 pb-8 relative z-10">
+      <div class="max-w-lg mx-auto text-center">
+        @if (iWon) {
+          <div class="text-7xl mb-2 animate-bounce">🏆</div>
+          <h1 class="text-3xl font-black text-white">¡Victoria!</h1>
+        } @else {
+          <div class="text-7xl mb-2">😤</div>
+          <h1 class="text-3xl font-black text-white">¡Derrota!</h1>
+        }
+        <p class="text-amber-200 mt-1">La batalla ha terminado</p>
+      </div>
+    </div>
+
+    <div class="max-w-lg mx-auto px-4 mt-6 flex flex-col gap-4 relative z-10">
+      <!-- XP change -->
+      <div class="text-center">
+        @if (xpChange > 0) {
+          <span class="bg-green-500/20 border border-green-500/50 text-green-400 font-black text-lg px-5 py-2 rounded-full inline-block">
+            +{{ xpChange }} XP 🎉
+          </span>
+        } @else if (xpChange < 0) {
+          <span class="bg-red-500/20 border border-red-500/50 text-red-400 font-black text-lg px-5 py-2 rounded-full inline-block">
+            {{ xpChange }} XP 💔
+          </span>
+        }
+      </div>
+
+      <!-- Scoreboard -->
+      <div class="bg-[#1e293b] border border-slate-700/50 rounded-2xl p-4">
+        <h3 class="text-white font-bold mb-3 text-center">📊 Puntuaciones</h3>
+        <div class="flex flex-col gap-3">
+          @for (entry of sortedScores; track entry.uid; let i = $index) {
+            <div class="flex items-center gap-3 p-3 rounded-xl"
+              [class]="i === 0 ? 'bg-amber-500/10 border border-amber-500/30' : 'bg-slate-800/50'">
+              <span class="text-2xl font-black"
+                [class]="i === 0 ? 'text-amber-400' : i === 1 ? 'text-slate-400' : 'text-orange-700'">
+                {{ i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉' }}
+              </span>
+              <span class="text-2xl">{{ entry.avatar }}</span>
+              <div class="flex-1 min-w-0">
+                <p class="text-white font-bold truncate"
+                  [class.text-amber-400]="entry.uid === currentUser()?.uid">
+                  {{ entry.name }}
+                  @if (entry.uid === currentUser()?.uid) {
+                    <span class="text-xs text-slate-400">(tú)</span>
+                  }
+                </p>
+              </div>
+              <span class="text-white font-black text-lg">{{ entry.score }} pts</span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="flex gap-3 mt-2">
+        <button (click)="goToCreate()"
+          class="flex-1 bg-gradient-to-r from-amber-500 to-orange-600 rounded-2xl p-4 text-center active:scale-95 transition-all">
+          <span class="text-white font-bold">🔄 Jugar de nuevo</span>
+        </button>
+        <button (click)="goToLobby()"
+          class="flex-1 bg-[#1e293b] border border-slate-600 rounded-2xl p-4 text-center active:scale-95 transition-all">
+          <span class="text-slate-300 font-bold">🏠 Lobby</span>
+        </button>
+      </div>
+    </div>
   </div>
-</div>
+}
+
+<!-- Confetti animation styles -->
+<style>
+  .confetti-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 5;
+  }
+  .confetti {
+    position: absolute;
+    top: -10px;
+    width: 10px;
+    height: 10px;
+    animation: confetti-fall 3s ease-in-out infinite;
+  }
+  .confetti:nth-child(odd) {
+    background: #f59e0b;
+    border-radius: 50%;
+  }
+  .confetti:nth-child(even) {
+    background: #ea580c;
+    width: 8px;
+    height: 12px;
+    border-radius: 2px;
+  }
+  .confetti:nth-child(3n) {
+    background: #10b981;
+  }
+  .confetti:nth-child(4n) {
+    background: #3b82f6;
+    border-radius: 50%;
+    width: 6px;
+    height: 6px;
+  }
+  @keyframes confetti-fall {
+    0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fade-in {
+    animation: fade-in 0.3s ease-out;
+  }
+</style>

@@ -2,11 +2,12 @@ import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
+import { PromoCodeComponent } from '../../shared/promo-code/promo-code.component';
 
 @Component({
   selector: 'app-auth',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PromoCodeComponent],
   templateUrl: './auth.component.html',
 })
 export class AuthComponent {
@@ -25,6 +26,10 @@ export class AuthComponent {
     this.error.set('');
     try {
       await this.authService.loginWithGoogle();
+      // Google Ads conversion tracking — registro/login con Google
+      if (typeof (window as any).gtag_report_conversion === 'function') {
+        (window as any).gtag_report_conversion();
+      }
     } catch (e: any) {
       this.error.set(e.message || 'Error al iniciar sesión');
     } finally {
@@ -42,6 +47,10 @@ export class AuthComponent {
       } else {
         if (!this.displayName.trim()) { this.error.set('Escribe tu nombre'); return; }
         await this.authService.registerWithEmail(this.email, this.password, this.displayName);
+        // Google Ads conversion tracking — registro completado
+        if (typeof (window as any).gtag_report_conversion === 'function') {
+          (window as any).gtag_report_conversion();
+        }
       }
     } catch (e: any) {
       this.error.set(e.message || 'Error');

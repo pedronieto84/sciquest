@@ -1,0 +1,37 @@
+<div class="max-w-lg mx-auto px-4 py-5">
+
+  @if (loading()) {
+    <div class="flex justify-center py-14">
+      <div class="w-8 h-8 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin"></div>
+    </div>
+  } @else if (chats().length === 0) {
+    <div class="text-center py-16">
+      <div class="text-6xl mb-4">💬</div>
+      <p class="text-slate-300 font-bold text-lg mb-2">Sin conversaciones aún</p>
+      <p class="text-slate-500 text-sm mb-6">Agrega amigos y empieza a chatear</p>
+    </div>
+  } @else {
+    <div class="flex flex-col gap-2">
+      @for (chat of chats(); track chat.id) {
+        <button (click)="openChat(chat)"
+          class="w-full bg-[#1e293b] border border-slate-700/50 hover:border-indigo-500/40 rounded-2xl p-4
+                 flex items-center gap-3 text-left active:scale-[0.99] transition-all">
+          <div class="w-12 h-12 rounded-2xl bg-slate-700 flex items-center justify-center text-2xl flex-shrink-0">
+            {{ getAvatar(chat) }}
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-white font-bold text-sm truncate">
+              {{ getOther(chat)?.displayName || 'Usuario' }}
+            </p>
+            <p class="text-slate-400 text-xs truncate">
+              {{ chat.lastMessage || 'Sin mensajes' }}
+            </p>
+          </div>
+          <div class="text-slate-500 text-xs flex-shrink-0">
+            {{ formatTime(chat.lastMessageAt) }}
+          </div>
+        </button>
+      }
+    </div>
+  }
+</div>

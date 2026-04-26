@@ -1,0 +1,57 @@
+<div class="min-h-screen bg-[#0f172a] flex items-center justify-center px-4">
+  <div class="w-full max-w-sm">
+    <!-- Logo -->
+    <div class="text-center mb-8">
+      <div class="text-6xl mb-3">⚗️</div>
+      <h1 class="text-white font-black text-3xl">¡Elige tu nombre!</h1>
+      <p class="text-slate-400 text-sm mt-2">Este es el nombre que verán todos en el ranking 🏆</p>
+    </div>
+
+    <!-- Input -->
+    <div class="bg-[#1e293b] rounded-2xl p-6 border border-slate-700/50">
+      <label class="text-slate-400 text-xs font-medium mb-2 block">NOMBRE DE USUARIO</label>
+      <div class="relative">
+        <input
+          type="text"
+          [ngModel]="username()"
+          (ngModelChange)="onInput($event)"
+          placeholder="ej: pedro_cientifico"
+          maxlength="20"
+          class="w-full bg-slate-900 text-white rounded-xl px-4 py-3 pr-10 border border-slate-600 focus:border-indigo-500 focus:outline-none text-lg font-mono"
+        />
+        <!-- Estado del check -->
+        @if (checking()) {
+          <span class="absolute right-3 top-3.5 text-slate-400 text-sm animate-spin">⏳</span>
+        } @else if (available() === true) {
+          <span class="absolute right-3 top-3 text-green-400 text-xl">✅</span>
+        } @else if (available() === false) {
+          <span class="absolute right-3 top-3 text-red-400 text-xl">❌</span>
+        }
+      </div>
+
+      <!-- Feedback -->
+      <div class="mt-2 h-5">
+        @if (username().length > 0 && username().length < 3) {
+          <p class="text-amber-400 text-xs">Mínimo 3 caracteres</p>
+        } @else if (available() === true) {
+          <p class="text-green-400 text-xs">✓ ¡Disponible!</p>
+        } @else if (available() === false) {
+          <p class="text-red-400 text-xs">✗ Ya está en uso, prueba otro</p>
+        }
+      </div>
+
+      <p class="text-slate-500 text-xs mt-3">Solo letras, números y guiones bajos. Máx. 20 caracteres.</p>
+
+      @if (error()) {
+        <p class="text-red-400 text-sm mt-3">{{ error() }}</p>
+      }
+
+      <button
+        (click)="confirm()"
+        [disabled]="!available() || saving() || username().length < 3"
+        class="w-full mt-5 bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold py-3 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition-all">
+        {{ saving() ? 'Guardando...' : '✨ ¡Este es mi nombre!' }}
+      </button>
+    </div>
+  </div>
+</div>

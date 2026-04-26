@@ -1,0 +1,126 @@
+import { Component, inject, OnInit, OnDestroy, signal, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Auth, user } from '@angular/fire/auth';
+import { Firestore, docData, doc, getDoc } from '@angular/fire/firestore';
+import { switchMap, of, Subscription, firstValueFrom } from 'rxjs';
+import { ChatService } from '../../../../core/services/chat.service';
+import { AuthService } from '../../../../core/services/auth.service';
+import { ChatMessage } from '../../../../core/models/chat.model';
+import { SciUser } from '../../../../core/models/user.model';
+
+@Component({
+  selector: 'app-chat-room',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  templateUrl: './chat-room.component.html',
+})
+export class ChatRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
+  @ViewChild('messagesEnd') messagesEnd!: ElementRef;
+
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private auth = inject(Auth);
+  private authService = inject(AuthService);
+  private chatService = inject(ChatService);
+  private firestore = inject(Firestore);
+
+  messages = signal<ChatMessage[]>([]);
+  loading = signal(true);
+  sending = signal(false);
+  newMessage = '';
+
+  myUid = signal<string>('');
+  myUser = signal<SciUser | null>(null);
+  otherUser = signal<SciUser | null>(null);
+  chatId = signal<string>('');
+
+  private subs: Subscription[] = [];
+  private shouldScrollToBottom = true;
+
+  async ngOnInit() {
+    const fireUser = await firstValueFrom(user(this.auth));
+    if (!fireUser) return;
+    this.myUid.set(fireUser.uid);
+
+    // Carga el usuario propio
+    const me = await firstValueFrom(docData(this.authService.getUserDoc(fireUser.uid)) as any);
+    this.myUser.set(me as SciUser);
+
+    // Carga el usuario del otro
+    const friendUid = this.route.snapshot.paramMap.get('friendUid')!;
+    const otherSnap = await getDoc(doc(this.firestore, `users/${friendUid}`));
+    if (!otherSnap.exists()) { this.router.navigate(['/mi-cuenta/chat']); return; }
+    const other = otherSnap.data() as SciUser;
+    this.otherUser.set(other);
+
+    // Crea/obtiene el chat
+    const chatId = await this.chatService.getOrCreateChat(me as SciUser, other);
+    this.chatId.set(chatId);
+
+    // Suscribe a mensajes en tiempo real
+    this.subs.push(
+      this.chatService.getMessages(chatId).subscribe(msgs => {
+        this.messages.set(msgs);
+        this.loading.set(false);
+        this.shouldScrollToBottom = true;
+      }),
+    );
+  }
+
+  ngAfterViewChecked() {
+    if (this.shouldScrollToBottom) {
+      this.scrollToBottom();
+      this.shouldScrollToBottom = false;
+    }
+  }
+
+  ngOnDestroy() { this.subs.forEach(s => s.unsubscribe()); }
+
+  async send() {
+    const text = this.newMessage.trim();
+    if (!text || this.sending()) return;
+
+    this.sending.set(true);
+    this.newMessage = '';
+    try {
+      await this.chatService.sendMessage(this.chatId(), this.myUid(), text);
+      this.shouldScrollToBottom = true;
+    } finally {
+      this.sending.set(false);
+    }
+  }
+
+  onKeydown(event: KeyboardEvent) {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      this.send();
+    }
+  }
+
+  private scrollToBottom() {
+    try {
+      this.messagesEnd?.nativeElement?.scrollIntoView({ behavior: 'smooth' });
+    } catch {}
+  }
+
+  isMyMessage(msg: ChatMessage): boolean {
+    return msg.senderId === this.myUid();
+  }
+
+  formatTime(ts: any): string {
+    if (!ts) return '';
+    const date = ts?.toDate ? ts.toDate() : new Date(ts);
+    return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  getAvatar(user: SciUser | null): string {
+    if (!user?.avatar || user.avatar.startsWith('http')) return '🔬';
+    return user.avatar;
+  }
+
+  goBack() {
+    this.router.navigate(['/mi-cuenta/chat']);
+  }
+}

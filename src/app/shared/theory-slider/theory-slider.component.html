@@ -1,0 +1,106 @@
+<div class="theory-slider">
+  @if (cards.length === 0) {
+    <!-- skeleton -->
+    <div class="px-4">
+      <div class="bg-[#1e293b] rounded-2xl overflow-hidden animate-pulse">
+        <div class="h-32 bg-slate-700/50"></div>
+        <div class="p-5 space-y-3">
+          <div class="h-4 bg-slate-700/50 rounded w-3/4"></div>
+          <div class="h-4 bg-slate-700/50 rounded w-full"></div>
+          <div class="h-4 bg-slate-700/50 rounded w-5/6"></div>
+        </div>
+      </div>
+    </div>
+  } @else {
+    <!-- Progress dots -->
+    <div class="flex items-center justify-between px-4 py-3">
+      <span class="text-slate-400 text-sm font-medium">{{ current() + 1 }} / {{ total }}</span>
+      <div class="flex gap-1.5 flex-wrap justify-end max-w-[200px]">
+        @for (c of cards; track $index) {
+          <button (click)="goTo($index)"
+            class="h-1.5 rounded-full transition-all duration-300"
+            [class]="$index === current() ? 'w-6 bg-indigo-400' : 'w-1.5 bg-slate-600 hover:bg-slate-400'">
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Card -->
+    @if (card) {
+      <div class="px-4"
+           (touchstart)="onTouchStart($event)"
+           (touchend)="onTouchEnd($event)">
+        <div class="bg-[#1e293b] rounded-2xl overflow-hidden border border-slate-700/50 shadow-xl">
+          <!-- Header gradient -->
+          <div [class]="'bg-gradient-to-br p-5 ' + card.gradient">
+            <div class="flex items-start justify-between">
+              <div class="flex-1">
+                <span class="text-4xl">{{ card.emoji }}</span>
+                <h3 class="text-white font-bold text-xl mt-2 leading-tight">{{ card.title }}</h3>
+                <p class="text-white/70 text-sm mt-1">{{ card.tagline }}</p>
+              </div>
+              <span class="ml-3 text-xs px-2.5 py-1 rounded-full bg-black/25 text-white/70 capitalize shrink-0">
+                {{ card.difficulty }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Body -->
+          <div class="p-5 space-y-4">
+            <!-- Main explanation -->
+            <p class="text-slate-300 text-sm leading-relaxed">{{ card.body }}</p>
+
+            <!-- Key points -->
+            @if (card.keyPoints && card.keyPoints.length > 0) {
+              <div class="space-y-2 pt-1">
+                @for (point of card.keyPoints; track $index) {
+                  <div class="flex items-start gap-2">
+                    <span class="text-indigo-400 text-base leading-tight mt-0.5 shrink-0">▸</span>
+                    <span class="text-slate-300 text-sm leading-snug">{{ point }}</span>
+                  </div>
+                }
+              </div>
+            }
+
+            <!-- Formula box -->
+            @if (card.formula) {
+              <div class="bg-slate-900/60 rounded-xl p-4 border border-slate-600/30">
+                <p class="text-indigo-300 font-mono text-lg font-bold text-center tracking-wide whitespace-pre-wrap">{{ card.formula }}</p>
+                @if (card.formulaDesc) {
+                  <p class="text-slate-400 text-xs text-center mt-1.5">{{ card.formulaDesc }}</p>
+                }
+              </div>
+            }
+
+            <!-- Visual -->
+            @if (card.visual) {
+              <div class="bg-slate-900/40 rounded-xl p-4 border border-slate-700/30">
+                <p class="text-slate-300 font-mono text-sm text-center whitespace-pre-wrap">{{ card.visual }}</p>
+              </div>
+            }
+
+            <!-- Fun fact -->
+            <div class="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 flex gap-3">
+              <span class="text-amber-400 text-lg shrink-0">💡</span>
+              <p class="text-amber-200 text-sm leading-relaxed">{{ card.funFact }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Navigation -->
+    <div class="flex items-center justify-between px-4 pt-4 pb-2">
+      <button (click)="prev()" [disabled]="current() === 0"
+        class="px-5 py-2.5 rounded-xl bg-slate-700 text-slate-300 font-medium text-sm
+               disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition-all">
+        ← Anterior
+      </button>
+      <button (click)="next()" [disabled]="current() === total - 1"
+        class="px-5 py-2.5 rounded-xl bg-indigo-600 text-white font-medium text-sm
+               disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition-all">
+        Siguiente →
+      </button>
+    </div>
+  }
+</div>

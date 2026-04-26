@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Auth, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword,
   createUserWithEmailAndPassword, signOut, user, updateProfile } from '@angular/fire/auth';
-import { Firestore, doc, setDoc, getDoc, updateDoc } from '@angular/fire/firestore';
+import { Firestore, doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs, docData } from '@angular/fire/firestore';
 import { Router } from '@angular/router';
 import { Observable, from, switchMap, of } from 'rxjs';
 import { SciUser } from '../models/user.model';
@@ -45,14 +45,16 @@ export class AuthService {
     if (!snap.exists()) {
       const newUser: SciUser = {
         uid: fireUser.uid,
+        username: '',
         displayName: fireUser.displayName || 'Explorador',
         email: fireUser.email || '',
-        avatar: fireUser.photoURL || this.randomAvatar(),
+        avatar: this.randomAvatar(),
+        photoUrl: fireUser.photoURL || '',
         level: 1,
         xp: 0,
         coins: 50,
         badges: ['newcomer'],
-        stats: { chemistry: 0, quantum: 0, nuclear: 0, newtonian: 0 },
+        stats: { chemistry: 0, quantum: 0, nuclear: 0, newtonian: 0, biology: 0, astronomy: 0 },
         createdAt: new Date(),
       };
       await setDoc(ref, newUser);
@@ -61,6 +63,22 @@ export class AuthService {
 
   getUserDoc(uid: string) {
     return doc(this.firestore, `users/${uid}`);
+  }
+
+  getCurrentUserDoc(uid: string): Observable<SciUser | null> {
+    return docData(doc(this.firestore, `users/${uid}`)) as Observable<SciUser | null>;
+  }
+
+  async isUsernameAvailable(username: string): Promise<boolean> {
+    const ref = collection(this.firestore, 'users');
+    const q = query(ref, where('username', '==', username.toLowerCase().trim()));
+    const snap = await getDocs(q);
+    return snap.empty;
+  }
+
+  async setUsername(uid: string, username: string): Promise<void> {
+    const ref = doc(this.firestore, `users/${uid}`);
+    await updateDoc(ref, { username: username.toLowerCase().trim() });
   }
 
   private randomAvatar(): string {

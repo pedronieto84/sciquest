@@ -32,27 +32,27 @@
         <div class="flex items-end justify-center gap-3 mb-6 px-4">
           <!-- 2nd -->
           <div class="flex-1 text-center">
-            <div class="text-2xl mb-1">{{ entries()[1].avatar }}</div>
+            <div class="text-2xl mb-1">{{ getAvatar(entries()[1]) }}</div>
             <div class="bg-slate-600/30 rounded-t-2xl pt-3 pb-2 px-2">
-              <p class="text-slate-300 font-bold text-xs truncate">{{ entries()[1].displayName }}</p>
+              <p class="text-slate-300 font-bold text-xs truncate">{{ getDisplayName(entries()[1]) }}</p>
               <p class="text-slate-400 text-xs">{{ entries()[1].xp }} XP</p>
             </div>
             <div class="bg-slate-500 text-white text-center py-1 rounded-b-lg text-sm font-bold">🥈</div>
           </div>
           <!-- 1st -->
           <div class="flex-1 text-center">
-            <div class="text-3xl mb-1 animate-bounce">{{ entries()[0].avatar }}</div>
+            <div class="text-3xl mb-1 animate-bounce">{{ getAvatar(entries()[0]) }}</div>
             <div class="bg-amber-600/30 rounded-t-2xl pt-4 pb-2 px-2">
-              <p class="text-amber-200 font-bold text-xs truncate">{{ entries()[0].displayName }}</p>
+              <p class="text-amber-200 font-bold text-xs truncate">{{ getDisplayName(entries()[0]) }}</p>
               <p class="text-amber-300 text-xs">{{ entries()[0].xp }} XP</p>
             </div>
             <div class="bg-amber-500 text-white text-center py-1 rounded-b-lg text-sm font-bold">🥇</div>
           </div>
           <!-- 3rd -->
           <div class="flex-1 text-center">
-            <div class="text-2xl mb-1">{{ entries()[2].avatar }}</div>
+            <div class="text-2xl mb-1">{{ getAvatar(entries()[2]) }}</div>
             <div class="bg-amber-800/30 rounded-t-2xl pt-2 pb-2 px-2">
-              <p class="text-amber-100/70 font-bold text-xs truncate">{{ entries()[2].displayName }}</p>
+              <p class="text-amber-100/70 font-bold text-xs truncate">{{ getDisplayName(entries()[2]) }}</p>
               <p class="text-amber-400/60 text-xs">{{ entries()[2].xp }} XP</p>
             </div>
             <div class="bg-amber-700 text-white text-center py-1 rounded-b-lg text-sm font-bold">🥉</div>
@@ -67,9 +67,9 @@
             <span class="w-8 text-center font-bold text-sm" [class]="i < 3 ? 'text-amber-400' : 'text-slate-500'">
               {{ medal(i) }}
             </span>
-            <span class="text-2xl">{{ entry.avatar }}</span>
+            <span class="text-2xl">{{ getAvatar(entry) }}</span>
             <div class="flex-1">
-              <p class="text-white font-bold text-sm">{{ entry.displayName }}</p>
+              <p class="text-white font-bold text-sm">{{ getDisplayName(entry) }}</p>
               <p class="text-slate-400 text-xs">Nivel {{ entry.level }}</p>
             </div>
             <div class="text-right">

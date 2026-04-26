@@ -1,15 +1,23 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { Subscription } from 'rxjs';
+import { TheoryService } from '../../core/services/theory.service';
+import { TheoryCard } from '../../core/models/theory.model';
+import { TheorySliderComponent } from '../../shared/theory-slider/theory-slider.component';
 
 @Component({
   selector: 'app-nuclear',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, TheorySliderComponent],
   templateUrl: './nuclear.component.html',
 })
-export class NuclearComponent {
-  activeTab = signal<'concepts' | 'reactions' | 'isotopes'>('concepts');
+export class NuclearComponent implements OnInit, OnDestroy {
+  private theoryService = inject(TheoryService);
+  private theorySub?: Subscription;
+
+  activeTab = signal<'theory' | 'concepts' | 'reactions' | 'isotopes'>('concepts');
+  theoryCards = signal<TheoryCard[]>([]);
 
   concepts = [
     { emoji: '🔴', title: 'Protón', desc: 'Partícula con carga positiva (+) en el núcleo. El número de protones define qué elemento es.', color: 'from-red-600/20 to-red-500/10', border: 'border-red-500/30' },
@@ -34,4 +42,10 @@ export class NuclearComponent {
     { element: 'Plutonio', symbol: 'Pu', iso: 'Pu-238', use: '🛸 Fuente de energía para sondas espaciales (Voyager, New Horizons).' },
     { element: 'Hidrógeno', symbol: 'H', iso: 'H-3 (Tritio)', use: '💡 Fusión nuclear — combustible de las futuras centrales de fusión.' },
   ];
+
+  ngOnInit() {
+    this.theorySub = this.theoryService.getCards('nuclear').subscribe(cards => this.theoryCards.set(cards));
+  }
+
+  ngOnDestroy() { this.theorySub?.unsubscribe(); }
 }

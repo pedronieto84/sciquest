@@ -1,6 +1,10 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { Subscription } from 'rxjs';
+import { TheoryService } from '../../core/services/theory.service';
+import { TheoryCard } from '../../core/models/theory.model';
+import { TheorySliderComponent } from '../../shared/theory-slider/theory-slider.component';
 
 interface Concept {
   id: string;
@@ -15,10 +19,15 @@ interface Concept {
 @Component({
   selector: 'app-quantum',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, TheorySliderComponent],
   templateUrl: './quantum.component.html',
 })
-export class QuantumComponent {
+export class QuantumComponent implements OnInit, OnDestroy {
+  private theoryService = inject(TheoryService);
+  private theorySub?: Subscription;
+
+  activeView = signal<'concepts' | 'theory'>('concepts');
+  theoryCards = signal<TheoryCard[]>([]);
   selected = signal<Concept | null>(null);
 
   concepts: Concept[] = [
@@ -77,6 +86,12 @@ export class QuantumComponent {
       funFact: 'En 2019, Google anunció que su ordenador cuántico resolvió en 200 segundos un problema que le tomaría 10.000 años al mejor supercomputador clásico.',
     },
   ];
+
+  ngOnInit() {
+    this.theorySub = this.theoryService.getCards('quantum').subscribe(cards => this.theoryCards.set(cards));
+  }
+
+  ngOnDestroy() { this.theorySub?.unsubscribe(); }
 
   select(c: Concept) { this.selected.set(c); }
   close() { this.selected.set(null); }

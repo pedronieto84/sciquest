@@ -1,10 +1,11 @@
 import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { QuizService } from '../../core/services/quiz.service';
 import { QuizQuestion, Subject } from '../../core/models/quiz.model';
 
-type QuizState = 'select' | 'playing' | 'results';
+type QuizState = 'select' | 'loading' | 'playing' | 'results';
 
 @Component({
   selector: 'app-quiz',
@@ -28,6 +29,7 @@ export class QuizComponent implements OnInit, OnDestroy {
   xpEarned = signal(0);
 
   private timer: any;
+  private sub?: Subscription;
 
   subjects: { id: Subject; label: string; emoji: string; color: string }[] = [
     { id: 'chemistry',  label: 'Química',     emoji: '🧪', color: 'from-emerald-600 to-teal-500' },
@@ -57,16 +59,20 @@ export class QuizComponent implements OnInit, OnDestroy {
   }
 
   startQuiz(subject: Subject) {
-    const qs = this.quizService.getAllSubjectQuestions(subject).slice(0, 8);
-    this.questions.set(qs);
-    this.currentIndex.set(0);
-    this.answers.set([]);
-    this.selectedOption.set(null);
-    this.showExplanation.set(false);
-    this.score.set(0);
-    this.xpEarned.set(0);
-    this.state.set('playing');
-    this.startTimer();
+    this.state.set('loading');
+    this.sub?.unsubscribe();
+    this.sub = this.quizService.getAllSubjectQuestions(subject).subscribe(qs => {
+      const questions = qs.slice(0, 8);
+      this.questions.set(questions);
+      this.currentIndex.set(0);
+      this.answers.set([]);
+      this.selectedOption.set(null);
+      this.showExplanation.set(false);
+      this.score.set(0);
+      this.xpEarned.set(0);
+      this.state.set('playing');
+      this.startTimer();
+    });
   }
 
   startTimer() {
@@ -124,5 +130,8 @@ export class QuizComponent implements OnInit, OnDestroy {
     return 'bg-[#1e293b] border-slate-700/30 text-slate-500';
   }
 
-  ngOnDestroy() { clearInterval(this.timer); }
+  ngOnDestroy() {
+    clearInterval(this.timer);
+    this.sub?.unsubscribe();
+  }
 }

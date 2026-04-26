@@ -1,8 +1,10 @@
 export interface SciUser {
   uid: string;
-  displayName: string;
+  username: string;       // nombre único elegido por el usuario (ej: "pedro42")
+  displayName: string;    // nombre completo (de Google o registro manual)
   email: string;
-  avatar: string;
+  avatar: string;         // siempre un EMOJI (🦊, 🐯, etc.) NUNCA una URL
+  photoUrl?: string;      // OPCIONAL: URL foto de Google
   level: number;
   xp: number;
   coins: number;
@@ -12,7 +14,11 @@ export interface SciUser {
     quantum: number;
     nuclear: number;
     newtonian: number;
+    biology: number;
+    astronomy: number;
   };
+  duelsWon?: number;
+  duelsLost?: number;
   createdAt: Date;
 }
 

@@ -5,7 +5,7 @@
     <div class="flex items-center justify-between max-w-lg mx-auto">
       <div class="flex items-center gap-3">
         <div class="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center text-2xl font-bold shadow-lg">
-          {{ sciUser()?.avatar || '🦊' }}
+          {{ (sciUser()?.avatar && !sciUser()?.avatar?.startsWith('http')) ? sciUser()?.avatar : '🔬' }}
         </div>
         <div>
           <p class="text-slate-400 text-xs">¡Hola,</p>
@@ -58,6 +58,13 @@
           <p class="text-amber-100 text-xs">VS amigos</p>
         </div>
       </a>
+      <a routerLink="/pasapalabra" class="bg-gradient-to-br from-violet-600 to-purple-600 rounded-2xl p-4 flex items-center gap-3 shadow-lg active:scale-95 transition-all col-span-2">
+        <span class="text-3xl">🔤</span>
+        <div>
+          <p class="text-white font-bold text-sm">Pasapalabra</p>
+          <p class="text-violet-200 text-xs">27 letras, 3 minutos</p>
+        </div>
+      </a>
     </div>
 
     <!-- Subjects -->
@@ -87,6 +94,10 @@
     </div>
 
   </div>
+
+  <div class="px-4 pb-4 max-w-lg mx-auto">
+    <app-promo-code (redeemed)="onPromoRedeemed($event)" />
+  </div>
 </div>
 
 <!-- Bottom Nav -->
@@ -98,6 +109,10 @@
   <a routerLink="/quiz" routerLinkActive="text-indigo-400" class="flex flex-col items-center gap-0.5 text-slate-500">
     <span class="text-xl">🎯</span>
     <span class="text-xs">Quiz</span>
+  </a>
+  <a routerLink="/pasapalabra" routerLinkActive="text-violet-400" class="flex flex-col items-center gap-0.5 text-slate-500">
+    <span class="text-xl">🔤</span>
+    <span class="text-xs">Rosco</span>
   </a>
   <a routerLink="/competition" routerLinkActive="text-indigo-400" class="flex flex-col items-center gap-0.5 text-slate-500">
     <span class="text-xl">🏆</span>

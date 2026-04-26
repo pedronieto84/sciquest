@@ -67,6 +67,10 @@
       </button>
     </form>
 
+    @if (mode() === 'register') {
+      <app-promo-code />
+    }
+
     <p class="text-center text-slate-400 text-sm mt-4">
       {{ mode() === 'login' ? '¿Eres nuevo?' : '¿Ya tienes cuenta?' }}
       <button (click)="toggle()" class="text-indigo-400 font-bold ml-1 hover:text-indigo-300">

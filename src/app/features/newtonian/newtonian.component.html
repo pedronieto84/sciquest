@@ -18,16 +18,22 @@
   <!-- Tabs -->
   <div class="max-w-lg mx-auto px-4">
     <div class="flex gap-1.5 mt-4 mb-5 bg-[#1e293b] p-1 rounded-2xl">
+      <button (click)="activeTab.set('theory')" [class]="'flex-1 py-2 rounded-xl text-xs font-bold transition-all ' + (activeTab() === 'theory' ? 'bg-blue-600 text-white' : 'text-slate-400')">📖 Teoría</button>
       <button (click)="activeTab.set('laws')" [class]="'flex-1 py-2 rounded-xl text-xs font-bold transition-all ' + (activeTab() === 'laws' ? 'bg-blue-600 text-white' : 'text-slate-400')">Leyes</button>
       <button (click)="activeTab.set('simulator')" [class]="'flex-1 py-2 rounded-xl text-xs font-bold transition-all ' + (activeTab() === 'simulator' ? 'bg-blue-600 text-white' : 'text-slate-400')">Simulador</button>
       <button (click)="activeTab.set('formulas')" [class]="'flex-1 py-2 rounded-xl text-xs font-bold transition-all ' + (activeTab() === 'formulas' ? 'bg-blue-600 text-white' : 'text-slate-400')">Fórmulas</button>
     </div>
 
+    <!-- THEORY -->
+    @if (activeTab() === 'theory') {
+      <app-theory-slider [cards]="theoryCards()"></app-theory-slider>
+    }
+
     <!-- LAWS -->
     @if (activeTab() === 'laws') {
       <div class="flex flex-col gap-4">
         @for (law of laws; track law.number) {
-          <div class="bg-gradient-to-r {{ law.color }} border {{ law.border }} rounded-2xl p-5">
+          <div [class]="'bg-gradient-to-r border rounded-2xl p-5 ' + law.color + ' ' + law.border">
             <div class="flex items-center gap-3 mb-2">
               <div class="w-10 h-10 rounded-xl bg-blue-600/30 border border-blue-500/40 flex items-center justify-center font-black text-blue-300">
                 {{ law.number }}
@@ -72,14 +78,10 @@
 
         <!-- Visual simulator -->
         <div class="relative bg-slate-900 rounded-2xl h-40 overflow-hidden mb-4 flex items-stretch">
-          <!-- Sky gradient -->
           <div class="absolute inset-0 bg-gradient-to-b from-blue-900/30 to-transparent"></div>
-          <!-- Ground -->
           <div class="absolute bottom-0 left-0 right-0 h-4 bg-amber-900/60"></div>
-          <!-- Object -->
           <div class="absolute left-1/2 -translate-x-1/2 text-2xl transition-none"
                [style.top.%]="simProgress * 0.8">🍎</div>
-          <!-- Trail -->
           @if (simRunning()) {
             <div class="absolute left-1/2 w-0.5 bg-blue-400/30 -translate-x-1/2"
                  [style.top.%]="0"

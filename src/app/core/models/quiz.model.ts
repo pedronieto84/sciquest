@@ -1,4 +1,4 @@
-export type Subject = 'chemistry' | 'quantum' | 'nuclear' | 'newtonian';
+export type Subject = 'chemistry' | 'quantum' | 'nuclear' | 'newtonian' | 'biology' | 'astronomy';
 export type Difficulty = 'easy' | 'medium' | 'hard';
 
 export interface QuizQuestion {

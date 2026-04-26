@@ -1,0 +1,38 @@
+<div class="mt-4">
+  @if (!showInput()) {
+    <button
+      (click)="showInput.set(true)"
+      class="w-full text-center text-indigo-400 text-sm py-2 hover:text-indigo-300 transition-colors">
+      🎁 ¿Tienes un código promocional?
+    </button>
+  } @else {
+    <div class="bg-slate-800/60 rounded-2xl p-4 border border-slate-700/50">
+      <label class="text-slate-400 text-xs font-medium mb-2 block">CÓDIGO PROMOCIONAL</label>
+      <div class="flex gap-2">
+        <input
+          type="text"
+          [ngModel]="code()"
+          (ngModelChange)="code.set($event.toUpperCase())"
+          placeholder="Ej: BIENVENIDO"
+          class="flex-1 bg-slate-900 text-white rounded-xl px-3 py-2.5 border border-slate-600 focus:border-indigo-500 focus:outline-none text-sm font-mono uppercase tracking-wider"
+          (keyup.enter)="redeem()"
+        />
+        <button
+          (click)="redeem()"
+          [disabled]="loading() || !code()"
+          class="bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold px-4 py-2.5 rounded-xl disabled:opacity-40 transition-all active:scale-95 text-sm whitespace-nowrap">
+          {{ loading() ? '...' : '✨ Canjear' }}
+        </button>
+      </div>
+
+      @if (message()) {
+        <div [class]="success() ? 'mt-3 text-green-400 text-sm font-medium text-center' : 'mt-3 text-red-400 text-sm text-center'">
+          {{ message() }}
+          @if (success()) {
+            <div class="text-xs text-slate-400 mt-1">¡Sigue aprendiendo para ganar más XP!</div>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

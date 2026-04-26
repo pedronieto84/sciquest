@@ -1,0 +1,59 @@
+<div class="max-w-lg mx-auto px-4 py-5">
+
+  <!-- Search bar -->
+  <div class="relative mb-5">
+    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
+    <input
+      [(ngModel)]="searchTerm"
+      (ngModelChange)="onSearch()"
+      type="text"
+      placeholder="Buscar por nombre o @username..."
+      class="w-full bg-[#1e293b] border border-slate-700/50 text-white placeholder-slate-500
+             rounded-2xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:border-indigo-500 transition-colors"
+    />
+  </div>
+
+  @if (loading()) {
+    <div class="flex justify-center py-14">
+      <div class="w-8 h-8 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin"></div>
+    </div>
+  } @else if (filteredUsers().length === 0) {
+    <div class="text-center py-14">
+      <div class="text-5xl mb-3">🔭</div>
+      <p class="text-slate-400">No se encontraron usuarios</p>
+    </div>
+  } @else {
+    <div class="flex flex-col gap-3">
+      @for (u of filteredUsers(); track u.uid) {
+        <div class="bg-[#1e293b] border border-slate-700/50 rounded-2xl p-4 flex items-center gap-3">
+          <div class="w-12 h-12 rounded-2xl bg-slate-700 flex items-center justify-center text-2xl flex-shrink-0">
+            {{ getAvatar(u) }}
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-white font-bold text-sm truncate">{{ u.displayName }}</p>
+            <div class="flex items-center gap-2 mt-0.5">
+              <p class="text-slate-400 text-xs">@{{ u.username }}</p>
+              <span class="text-slate-600 text-xs">·</span>
+              <span class="text-slate-500 text-xs">Nv {{ u.level }}</span>
+              <span class="text-indigo-400 text-xs">{{ u.xp }} XP</span>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            @if (u.isFriend) {
+              <button (click)="openChat(u)"
+                class="bg-indigo-600 text-white text-xs font-bold px-3 py-2 rounded-xl active:scale-95 transition-all">
+                💬
+              </button>
+              <span class="text-green-400 text-xs font-bold flex items-center px-2">✓ Amigo</span>
+            } @else {
+              <button (click)="addFriend(u)" [disabled]="u.adding"
+                class="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-bold px-3 py-2 rounded-xl active:scale-95 transition-all">
+                @if (u.adding) { ⏳ } @else { ➕ Agregar }
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

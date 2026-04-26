@@ -1,15 +1,23 @@
-import { Component, signal, OnDestroy } from '@angular/core';
+import { Component, signal, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { Subscription } from 'rxjs';
+import { TheoryService } from '../../core/services/theory.service';
+import { TheoryCard } from '../../core/models/theory.model';
+import { TheorySliderComponent } from '../../shared/theory-slider/theory-slider.component';
 
 @Component({
   selector: 'app-newtonian',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, TheorySliderComponent],
   templateUrl: './newtonian.component.html',
 })
-export class NewtonianComponent implements OnDestroy {
-  activeTab = signal<'laws' | 'simulator' | 'formulas'>('laws');
+export class NewtonianComponent implements OnInit, OnDestroy {
+  private theoryService = inject(TheoryService);
+  private theorySub?: Subscription;
+
+  activeTab = signal<'theory' | 'laws' | 'simulator' | 'formulas'>('laws');
+  theoryCards = signal<TheoryCard[]>([]);
 
   // Simple free-fall simulator
   mass = signal(10);      // kg
@@ -75,6 +83,15 @@ export class NewtonianComponent implements OnDestroy {
     return Math.min(100, (this.simY() / this.height()) * 100);
   }
 
+  ngOnInit() {
+    this.theorySub = this.theoryService.getCards('newtonian').subscribe(cards => this.theoryCards.set(cards));
+  }
+
+  ngOnDestroy() {
+    clearInterval(this.simInterval);
+    this.theorySub?.unsubscribe();
+  }
+
   startSim() {
     this.simRunning.set(true);
     this.simTime.set(0);
@@ -100,6 +117,4 @@ export class NewtonianComponent implements OnDestroy {
     this.simTime.set(0);
     this.simY.set(0);
   }
-
-  ngOnDestroy() { clearInterval(this.simInterval); }
 }

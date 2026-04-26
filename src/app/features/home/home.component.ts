@@ -6,11 +6,12 @@ import { Firestore, docData } from '@angular/fire/firestore';
 import { SciUser, LEVEL_XP_THRESHOLDS } from '../../core/models/user.model';
 import { Auth, user } from '@angular/fire/auth';
 import { switchMap, of, Subscription } from 'rxjs';
+import { PromoCodeComponent } from '../../shared/promo-code/promo-code.component';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, PromoCodeComponent],
   templateUrl: './home.component.html',
 })
 export class HomeComponent implements OnInit, OnDestroy {
@@ -26,6 +27,8 @@ export class HomeComponent implements OnInit, OnDestroy {
     { id: 'quantum', label: 'Cuántica', emoji: '⚛️', color: 'from-indigo-600 to-purple-500', route: '/quantum' },
     { id: 'nuclear', label: 'Nuclear', emoji: '☢️', color: 'from-amber-600 to-orange-500', route: '/nuclear' },
     { id: 'newtonian', label: 'Newtoniana', emoji: '🍎', color: 'from-blue-600 to-cyan-500', route: '/newtonian' },
+    { id: 'biology', label: 'Biología', emoji: '🧬', color: 'from-green-600 to-emerald-500', route: '/biology' },
+    { id: 'astronomy', label: 'Astronomía', emoji: '🌌', color: 'from-slate-700 to-indigo-600', route: '/astronomy' },
   ];
 
   ngOnInit() {
@@ -51,6 +54,10 @@ export class HomeComponent implements OnInit, OnDestroy {
   getSubjectXp(subjectId: string): number {
     const stats = this.sciUser()?.stats as any;
     return stats?.[subjectId] || 0;
+  }
+
+  onPromoRedeemed(xp: number) {
+    console.log(`Promo redeemed: +${xp} XP`);
   }
 
   logout() { this.authService.logout(); }
