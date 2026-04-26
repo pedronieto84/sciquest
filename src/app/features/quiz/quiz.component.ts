@@ -1,9 +1,12 @@
 import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { Subscription, firstValueFrom } from 'rxjs';
 import { QuizService } from '../../core/services/quiz.service';
 import { QuizQuestion, Subject } from '../../core/models/quiz.model';
+import { Auth, user } from '@angular/fire/auth';
+import { Firestore, doc, getDoc, updateDoc, increment } from '@angular/fire/firestore';
+import { getLevelFromXp } from '../../core/models/user.model';
 
 type QuizState = 'select' | 'loading' | 'playing' | 'results';
 
@@ -17,6 +20,8 @@ export class QuizComponent implements OnInit, OnDestroy {
   readonly Math = Math;
   private quizService = inject(QuizService);
   private route = inject(ActivatedRoute);
+  private auth = inject(Auth);
+  private firestore = inject(Firestore);
 
   state = signal<QuizState>('select');
   questions = signal<QuizQuestion[]>([]);
@@ -30,6 +35,7 @@ export class QuizComponent implements OnInit, OnDestroy {
 
   private timer: any;
   private sub?: Subscription;
+  private currentSubject: Subject | null = null;
 
   subjects: { id: Subject; label: string; emoji: string; color: string }[] = [
     { id: 'chemistry',  label: 'Química',     emoji: '🧪', color: 'from-emerald-600 to-teal-500' },
@@ -59,6 +65,7 @@ export class QuizComponent implements OnInit, OnDestroy {
   }
 
   startQuiz(subject: Subject) {
+    this.currentSubject = subject;
     this.state.set('loading');
     this.sub?.unsubscribe();
     this.sub = this.quizService.getAllSubjectQuestions(subject).subscribe(qs => {
@@ -114,7 +121,35 @@ export class QuizComponent implements OnInit, OnDestroy {
     } else {
       clearInterval(this.timer);
       this.state.set('results');
+      this.saveProgress();
     }
+  }
+
+  private async saveProgress() {
+    const xp = this.xpEarned();
+    if (xp <= 0) return;
+
+    const fireUser = await firstValueFrom(user(this.auth));
+    if (!fireUser) return;
+
+    const userRef = doc(this.firestore, `users/${fireUser.uid}`);
+    const userSnap = await getDoc(userRef);
+    const userData = userSnap.data() as any;
+    const newXp = (userData?.xp || 0) + xp;
+    const newLevel = getLevelFromXp(newXp);
+
+    const updates: any = {
+      xp: newXp,
+      level: newLevel,
+      coins: increment(Math.floor(xp / 10)),
+    };
+
+    // Actualiza la stat de la asignatura
+    if (this.currentSubject) {
+      updates[`stats.${this.currentSubject}`] = (userData?.stats?.[this.currentSubject] || 0) + xp;
+    }
+
+    await updateDoc(userRef, updates);
   }
 
   restart() {
