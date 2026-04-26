@@ -72,15 +72,23 @@ export class CompetitionComponent implements OnInit, OnDestroy {
 
   async loadData() {
     this.loading.set(true);
+
+    // Carga usuarios y retos de forma independiente para que un fallo no bloquee lo otro
     try {
-      const [users, pending] = await Promise.all([
-        this.challengeService.getAllUsers(),
-        this.challengeService.getPendingChallenges(this.currentUser()!.uid),
-      ]);
+      const users = await this.challengeService.getAllUsers();
       this.allUsers.set(users.filter(u => u.uid !== this.currentUser()?.uid));
+    } catch (e) {
+      console.error('Error cargando usuarios:', e);
+    }
+
+    try {
+      const pending = await this.challengeService.getPendingChallenges(this.currentUser()!.uid);
       // Only show challenges NOT created by current user (opponent's challenges to accept)
       this.pendingChallenges.set(pending.filter(c => c.createdBy !== this.currentUser()?.uid));
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error('Error cargando retos pendientes (puede faltar índice en Firestore):', e);
+    }
+
     this.loading.set(false);
   }
 
