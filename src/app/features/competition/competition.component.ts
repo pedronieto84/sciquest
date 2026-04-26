@@ -3,13 +3,13 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Auth, user } from '@angular/fire/auth';
-import { Firestore, doc, docData } from '@angular/fire/firestore';
+import { Firestore, doc, docData, getDoc } from '@angular/fire/firestore';
 import { ChallengeService } from '../../core/services/challenge.service';
 import { SciUser } from '../../core/models/user.model';
 import { Challenge } from '../../core/models/challenge.model';
 import { QuizService } from '../../core/services/quiz.service';
 import { QuizQuestion, Subject } from '../../core/models/quiz.model';
-import { switchMap, of, Subscription, Observable, take, filter, firstValueFrom } from 'rxjs';
+import { switchMap, of, Subscription, Observable } from 'rxjs';
 
 type CompState = 'lobby' | 'create' | 'waiting' | 'playing' | 'waiting_results' | 'results';
 
@@ -57,25 +57,17 @@ export class CompetitionComponent implements OnInit, OnDestroy {
     { id: 'astronomy', label: 'Astronomía', emoji: '🔭' },
   ];
 
-  async ngOnInit() {
-    // 1. Espera al usuario de Firebase Auth
-    const fireUser = await firstValueFrom(
-      user(this.auth).pipe(filter(u => !!u))
-    );
-    if (!fireUser) return;
-
-    // 2. Espera al documento de Firestore (necesario para tener el uid correcto al filtrar)
-    const sciUser = await firstValueFrom(
-      docData(doc(this.firestore, `users/${fireUser.uid}`)) as Observable<SciUser>
-    );
-    this.currentUser.set(sciUser);
-
-    // 3. Carga lista de usuarios y retos pendientes
-    await this.loadData();
-
-    // 4. Mantener currentUser actualizado en tiempo real
-    this.userSub = (docData(doc(this.firestore, `users/${fireUser.uid}`)) as Observable<SciUser>)
-      .subscribe(u => { if (u) this.currentUser.set(u); });
+  ngOnInit() {
+    // Suscripción al usuario autenticado → carga doc de Firestore con getDoc (one-shot, fiable)
+    this.userSub = user(this.auth).pipe(
+      switchMap(u => u ? (docData(doc(this.firestore, `users/${u.uid}`)) as Observable<SciUser>) : of(null)),
+    ).subscribe(async u => {
+      if (!u) return;
+      const prev = this.currentUser();
+      this.currentUser.set(u);
+      // Solo cargar datos la primera vez (cuando no había usuario antes)
+      if (!prev) await this.loadData();
+    });
   }
 
   async loadData() {
@@ -110,14 +102,29 @@ export class CompetitionComponent implements OnInit, OnDestroy {
   }
 
   async createChallenge() {
-    if (!this.selectedOpponents().length || !this.currentUser()) return;
+    if (!this.selectedOpponents().length) {
+      this.error.set('Selecciona al menos un oponente');
+      return;
+    }
+
+    // Obtener usuario: señal o fallback directo a Firestore
+    let me = this.currentUser();
+    if (!me) {
+      const authUser = this.auth.currentUser;
+      if (!authUser) { this.error.set('No autenticado. Recarga la página.'); return; }
+      const snap = await getDoc(doc(this.firestore, `users/${authUser.uid}`));
+      if (!snap.exists()) { this.error.set('Perfil no encontrado.'); return; }
+      me = snap.data() as SciUser;
+      this.currentUser.set(me);
+    }
+
     this.creating.set(true);
     this.error.set('');
     try {
       const challengeId = await this.challengeService.createChallenge(
         this.selectedOpponents(),
         this.selectedSubject(),
-        this.currentUser()!
+        me
       );
       // Go to waiting state — watch for opponent to accept
       this.state.set('waiting');
