@@ -18,10 +18,26 @@ export class QuizService {
     const snap = await getDocs(q);
     const questions = snap.docs.map(d => {
       const data = d.data() as any;
+
+      // Normalizar dificultad: Firestore usa beginner/intermediate/advanced,
+      // el modelo usa easy/medium/hard
+      const diffMap: Record<string, Difficulty> = {
+        beginner: 'easy', easy: 'easy',
+        intermediate: 'medium', medium: 'medium',
+        advanced: 'hard', hard: 'hard',
+      };
+      const difficulty: Difficulty = diffMap[data.difficulty] ?? 'easy';
+
+      // XP por dificultad si no está en Firestore
+      const xpMap: Record<Difficulty, number> = { easy: 10, medium: 20, hard: 30 };
+      const xpReward: number = data.xpReward ?? xpMap[difficulty];
+
       return {
         id: d.id,
         ...data,
+        difficulty,
         correctIndex: data.correctIndex ?? data.correct,
+        xpReward,
       } as QuizQuestion;
     });
     this.cache.set(subject, questions);
