@@ -2,6 +2,7 @@ import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { environment } from '../../../environments/environment';
 import { Firestore, doc, getDoc } from '@angular/fire/firestore';
 import { SciUser, LEVEL_XP_THRESHOLDS } from '../../core/models/user.model';
 import { Auth, user } from '@angular/fire/auth';
@@ -25,6 +26,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   private chatService = inject(ChatService);
   private friendsService = inject(FriendsService);
 
+  readonly appVersion = environment.appVersion;
   sciUser = signal<SciUser | null>(null);
   unreadCount = signal(0); // mensajes no leídos + solicitudes de amistad
   private sub?: Subscription;

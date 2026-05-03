@@ -1,5 +1,6 @@
 export const environment = {
   production: true,
+  appVersion: '0.19.13',
   firebase: {
     apiKey: 'AIzaSyC7qAUGksu7ZpUuITa84KduxfvBRQLfK-w',
     authDomain: 'sciquest-fun.firebaseapp.com',
