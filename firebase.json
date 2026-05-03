@@ -1,4 +1,9 @@
 {
+  "functions": {
+    "source": "functions",
+    "codebase": "sciquest",
+    "ignore": ["node_modules", ".git", "firebase-debug.log", "firebase-debug.*.log"]
+  },
   "hosting": {
     "public": "dist/sciquest/browser",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
