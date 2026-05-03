@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Auth, user } from '@angular/fire/auth';
-import { Firestore, docData } from '@angular/fire/firestore';
+import { Firestore, doc, getDoc } from '@angular/fire/firestore';
 import { firstValueFrom } from 'rxjs';
 import { FriendsService } from '../../../core/services/friends.service';
 import { ChatService } from '../../../core/services/chat.service';
@@ -41,8 +41,8 @@ export class BuscarAmigosComponent implements OnInit {
     if (!fireUser) return;
     this.myUid.set(fireUser.uid);
 
-    const sciUser = await firstValueFrom(docData(this.authService.getUserDoc(fireUser.uid)) as any);
-    this.myUser.set(sciUser as SciUser);
+    const snap = await getDoc(doc(this.firestore, `users/${fireUser.uid}`));
+    if (snap.exists()) this.myUser.set(snap.data() as SciUser);
 
     await this.loadUsers();
   }
