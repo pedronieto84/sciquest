@@ -1,7 +1,7 @@
-<div class="min-h-screen bg-[#0f172a] flex flex-col">
+<div class="bg-[#0f172a] min-h-full flex flex-col">
 
-  <!-- Header del chat -->
-  <div class="bg-[#1e293b] px-4 pt-12 pb-4 border-b border-slate-700/50 flex-shrink-0">
+  <!-- Header del chat — sticky bajo el header de mi-cuenta -->
+  <div class="sticky top-0 z-10 bg-[#1e293b] px-4 pt-4 pb-4 border-b border-slate-700/50">
     <div class="max-w-lg mx-auto flex items-center gap-3">
       <button (click)="goBack()" class="text-slate-400 hover:text-white transition-colors">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -18,8 +18,8 @@
     </div>
   </div>
 
-  <!-- Mensajes -->
-  <div class="flex-1 overflow-y-auto px-4 py-4">
+  <!-- Mensajes — área scrollable que crece entre header e input -->
+  <div class="flex-1 px-4 py-4 pb-2">
     <div class="max-w-lg mx-auto flex flex-col gap-2">
 
       @if (loading()) {
@@ -50,8 +50,8 @@
     </div>
   </div>
 
-  <!-- Input de mensaje -->
-  <div class="bg-[#1e293b] border-t border-slate-700/50 px-4 py-3 flex-shrink-0 pb-8">
+  <!-- Input de mensaje — sticky al bottom del scroll container -->
+  <div class="sticky bottom-0 z-10 bg-[#1e293b] border-t border-slate-700/50 px-4 py-3 pb-8">
     <div class="max-w-lg mx-auto flex items-end gap-2">
       <textarea
         [(ngModel)]="newMessage"
