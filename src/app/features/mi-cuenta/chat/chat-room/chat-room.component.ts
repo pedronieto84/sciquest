@@ -18,6 +18,11 @@ import { SciUser } from '../../../../core/models/user.model';
 export class ChatRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
   @ViewChild('messagesEnd') messagesEnd!: ElementRef;
 
+  // Bloquea el scroll del contenedor padre (mi-cuenta) para que
+  // el chat maneje su propio layout con flex interno
+  private parentScrollEl: HTMLElement | null = null;
+  private elRef = inject(ElementRef);
+
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private auth = inject(Auth);
@@ -38,6 +43,17 @@ export class ChatRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
   private shouldScrollToBottom = true;
 
   async ngOnInit() {
+    // Deshabilita el scroll del padre (overflow-y-auto de mi-cuenta)
+    // para que el chat controle su propio layout flex
+    const host = this.elRef.nativeElement as HTMLElement;
+    const parent = host.parentElement;
+    if (parent) {
+      this.parentScrollEl = parent;
+      parent.style.overflow = 'hidden';
+      parent.style.display = 'flex';
+      parent.style.flexDirection = 'column';
+    }
+
     const fireUser = await firstValueFrom(user(this.auth));
     if (!fireUser) return;
     this.myUid.set(fireUser.uid);
@@ -79,7 +95,15 @@ export class ChatRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
     }
   }
 
-  ngOnDestroy() { this.subs.forEach(s => s.unsubscribe()); }
+  ngOnDestroy() {
+    this.subs.forEach(s => s.unsubscribe());
+    // Restaura el scroll del padre al salir del chat
+    if (this.parentScrollEl) {
+      this.parentScrollEl.style.overflow = '';
+      this.parentScrollEl.style.display = '';
+      this.parentScrollEl.style.flexDirection = '';
+    }
+  }
 
   async send() {
     const text = this.newMessage.trim();
