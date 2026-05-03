@@ -55,7 +55,7 @@ export class QuizService {
 
   getAllSubjectQuestions(subject: Subject): Observable<QuizQuestion[]> {
     return from(this.fetchSubject(subject)).pipe(
-      map(qs => this.shuffle(qs))
+      map(qs => this.shuffle([...qs]))  // siempre nueva copia shuffleada
     );
   }
 

@@ -2,13 +2,13 @@ import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { Auth, user } from '@angular/fire/auth';
-import { switchMap, of, Subscription, firstValueFrom } from 'rxjs';
+import { Subscription, firstValueFrom } from 'rxjs';
 import { FriendsService } from '../../../core/services/friends.service';
 import { ChatService } from '../../../core/services/chat.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { Friend } from '../../../core/models/friendship.model';
 import { SciUser } from '../../../core/models/user.model';
-import { Firestore, docData } from '@angular/fire/firestore';
+import { Firestore, doc, getDoc } from '@angular/fire/firestore';
 
 @Component({
   selector: 'app-amigos',
@@ -32,19 +32,17 @@ export class AmigosComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.subs.push(
-      user(this.auth).pipe(
-        switchMap(u => {
-          if (!u) return of(null);
-          // Carga el usuario propio
-          (docData(this.authService.getUserDoc(u.uid)) as any).subscribe((sciUser: SciUser) => {
-            this.myUser.set(sciUser);
-          });
-          // Carga la lista de amigos
-          return this.friendsService.getFriends(u.uid);
-        }),
-      ).subscribe(friends => {
-        this.friends.set(friends ?? []);
-        this.loading.set(false);
+      user(this.auth).subscribe(async u => {
+        if (!u) { this.loading.set(false); return; }
+        try {
+          // Carga usuario propio
+          const snap = await getDoc(doc(this.firestore, `users/${u.uid}`));
+          if (snap.exists()) this.myUser.set(snap.data() as SciUser);
+          // Carga amigos
+          const friends = await this.friendsService.getFriendsList(u.uid);
+          this.friends.set(friends);
+        } catch(e) { console.error('amigos load error:', e); }
+        finally { this.loading.set(false); }
       }),
     );
   }

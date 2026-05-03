@@ -21,10 +21,17 @@ import { SciUser } from '../models/user.model';
 export class FriendsService {
   private firestore = inject(Firestore);
 
-  /** Lista reactiva de amigos del usuario */
+  /** Lista reactiva de amigos del usuario (real-time — puede fallar silenciosamente) */
   getFriends(myUid: string): Observable<Friend[]> {
     const ref = collection(this.firestore, `friendships/${myUid}/friends`);
     return collectionData(ref, { idField: 'uid' }) as Observable<Friend[]>;
+  }
+
+  /** Lista de amigos one-shot (fiable) */
+  async getFriendsList(myUid: string): Promise<Friend[]> {
+    const ref = collection(this.firestore, `friendships/${myUid}/friends`);
+    const snap = await getDocs(ref);
+    return snap.docs.map(d => ({ uid: d.id, ...d.data() } as Friend));
   }
 
   /** Agrega a alguien como amigo (unilateral, sin necesidad de aceptación) */

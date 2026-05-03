@@ -2,10 +2,10 @@ import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, NavigationEnd } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
-import { Firestore, docData } from '@angular/fire/firestore';
+import { Firestore, doc, getDoc } from '@angular/fire/firestore';
 import { Auth, user } from '@angular/fire/auth';
 import { SciUser } from '../../core/models/user.model';
-import { switchMap, of, Subscription, filter } from 'rxjs';
+import { Subscription, filter } from 'rxjs';
 
 @Component({
   selector: 'app-mi-cuenta',
@@ -25,7 +25,6 @@ export class MiCuentaComponent implements OnInit, OnDestroy {
   private subs: Subscription[] = [];
 
   ngOnInit() {
-    // Detecta el tab activo según la URL
     this.updateActiveTab(this.router.url);
     this.subs.push(
       this.router.events.pipe(
@@ -33,11 +32,15 @@ export class MiCuentaComponent implements OnInit, OnDestroy {
       ).subscribe((e: any) => this.updateActiveTab(e.urlAfterRedirects ?? e.url)),
     );
 
-    // Carga el usuario
+    // Carga el usuario con getDoc (evita fallos silenciosos de docData)
     this.subs.push(
-      user(this.auth).pipe(
-        switchMap(u => u ? docData(this.authService.getUserDoc(u.uid)) : of(null)),
-      ).subscribe(u => this.sciUser.set(u as SciUser | null)),
+      user(this.auth).subscribe(async u => {
+        if (!u) { this.sciUser.set(null); return; }
+        try {
+          const snap = await getDoc(doc(this.firestore, `users/${u.uid}`));
+          if (snap.exists()) this.sciUser.set(snap.data() as SciUser);
+        } catch(e) { console.error('mi-cuenta user load error:', e); }
+      }),
     );
   }
 

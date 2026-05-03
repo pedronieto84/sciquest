@@ -67,18 +67,35 @@ export class ChatService {
     });
   }
 
-  /** Stream de mensajes en tiempo real */
+  /** Stream de mensajes en tiempo real (usa onSnapshot en vez de collectionData) */
   getMessages(chatId: string): Observable<ChatMessage[]> {
-    const ref = collection(this.firestore, `chats/${chatId}/messages`);
-    const q = query(ref, orderBy('createdAt', 'asc'));
-    return collectionData(q, { idField: 'id' }) as Observable<ChatMessage[]>;
+    return new Observable(observer => {
+      const ref = collection(this.firestore, `chats/${chatId}/messages`);
+      const q = query(ref, orderBy('createdAt', 'asc'));
+      const unsub = onSnapshot(q,
+        snap => observer.next(snap.docs.map(d => ({ id: d.id, ...d.data() } as ChatMessage))),
+        err => { console.error('getMessages error:', err); observer.next([]); }
+      );
+      return () => unsub();
+    });
   }
 
-  /** Lista de chats de un usuario (en tiempo real) */
+  /** Lista de chats de un usuario (usa onSnapshot, con fallback a getDocs) */
   getMyChats(myUid: string): Observable<Chat[]> {
-    const ref = collection(this.firestore, 'chats');
-    const q = query(ref, where('participants', 'array-contains', myUid), orderBy('lastMessageAt', 'desc'));
-    return collectionData(q, { idField: 'id' }) as Observable<Chat[]>;
+    return new Observable(observer => {
+      const ref = collection(this.firestore, 'chats');
+      const q = query(ref, where('participants', 'array-contains', myUid), orderBy('lastMessageAt', 'desc'));
+      const unsub = onSnapshot(q,
+        snap => observer.next(snap.docs.map(d => ({ id: d.id, ...d.data() } as Chat))),
+        err => {
+          console.error('getMyChats error:', err);
+          // fallback: getDocs one-shot
+          getDocs(q).then(snap => observer.next(snap.docs.map(d => ({ id: d.id, ...d.data() } as Chat))))
+                    .catch(() => observer.next([]));
+        }
+      );
+      return () => unsub();
+    });
   }
 
   /** Obtiene datos del otro participante en un chat */
