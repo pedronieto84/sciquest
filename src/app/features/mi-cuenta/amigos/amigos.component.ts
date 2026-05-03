@@ -35,8 +35,9 @@ export class AmigosComponent implements OnInit, OnDestroy {
           const snap = await getDoc(doc(this.firestore, `users/${u.uid}`));
           if (snap.exists()) this.myUser.set(snap.data() as SciUser);
           this.friends.set(await this.friendsService.getFriendsList(u.uid));
-          // Limpiar notificaciones al abrir la pestaña
-          await this.friendsService.clearNotifications(u.uid);
+          // Limpiar notificaciones con un pequeño delay para que el badge
+          // haya actualizado la home antes de que desaparezcan
+          setTimeout(() => this.friendsService.clearNotifications(u.uid), 3000);
         } catch(e) { console.error(e); }
         finally { this.loading.set(false); }
       })
