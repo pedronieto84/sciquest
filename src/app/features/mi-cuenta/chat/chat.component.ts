@@ -54,6 +54,10 @@ export class ChatComponent implements OnInit, OnDestroy {
     return other.avatar;
   }
 
+  hasUnread(chat: Chat): boolean {
+    return chat.unreadBy?.includes(this.myUid()) ?? false;
+  }
+
   formatTime(ts: any): string {
     if (!ts) return '';
     const date = ts?.toDate ? ts.toDate() : new Date(ts);

@@ -16,7 +16,12 @@
         <button (click)="openChat(chat)"
           class="w-full bg-[#1e293b] border border-slate-700/50 hover:border-indigo-500/40 rounded-2xl p-4
                  flex items-center gap-3 text-left active:scale-[0.99] transition-all">
-          <div class="w-12 h-12 rounded-2xl bg-slate-700 flex items-center justify-center text-2xl flex-shrink-0">
+          <div class="w-12 h-12 rounded-2xl bg-slate-700 flex items-center justify-center text-2xl flex-shrink-0 transition-all"
+               [class.ring-2]="hasUnread(chat)"
+               [class.ring-green-400]="hasUnread(chat)"
+               [class.ring-offset-2]="hasUnread(chat)"
+               [class.ring-offset-[#1e293b]]="hasUnread(chat)"
+               [class.animate-pulse]="hasUnread(chat)">
             {{ getAvatar(chat) }}
           </div>
           <div class="flex-1 min-w-0">
