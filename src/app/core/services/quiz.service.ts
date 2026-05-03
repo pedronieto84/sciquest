@@ -16,7 +16,14 @@ export class QuizService {
     const ref = collection(this.firestore, 'questions');
     const q = query(ref, where('subject', '==', subject));
     const snap = await getDocs(q);
-    const questions = snap.docs.map(d => ({ id: d.id, ...d.data() } as QuizQuestion));
+    const questions = snap.docs.map(d => {
+      const data = d.data() as any;
+      return {
+        id: d.id,
+        ...data,
+        correctIndex: data.correctIndex ?? data.correct,
+      } as QuizQuestion;
+    });
     this.cache.set(subject, questions);
     return questions;
   }
