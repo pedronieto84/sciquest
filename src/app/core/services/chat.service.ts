@@ -67,31 +67,49 @@ export class ChatService {
     });
   }
 
-  /** Stream de mensajes en tiempo real (usa onSnapshot en vez de collectionData) */
+  /** Stream de mensajes en tiempo real — ordena en cliente para evitar índice */
   getMessages(chatId: string): Observable<ChatMessage[]> {
     return new Observable(observer => {
       const ref = collection(this.firestore, `chats/${chatId}/messages`);
-      const q = query(ref, orderBy('createdAt', 'asc'));
+      const q = query(ref);
       const unsub = onSnapshot(q,
-        snap => observer.next(snap.docs.map(d => ({ id: d.id, ...d.data() } as ChatMessage))),
+        snap => {
+          const msgs = snap.docs
+            .map(d => ({ id: d.id, ...d.data() } as ChatMessage))
+            .sort((a, b) => {
+              const ta = (a.createdAt as any)?.toMillis?.() ?? 0;
+              const tb = (b.createdAt as any)?.toMillis?.() ?? 0;
+              return ta - tb;
+            });
+          observer.next(msgs);
+        },
         err => { console.error('getMessages error:', err); observer.next([]); }
       );
       return () => unsub();
     });
   }
 
-  /** Lista de chats de un usuario (usa onSnapshot, con fallback a getDocs) */
+  /** Lista de chats de un usuario — sin orderBy para evitar índice compuesto */
   getMyChats(myUid: string): Observable<Chat[]> {
     return new Observable(observer => {
       const ref = collection(this.firestore, 'chats');
-      const q = query(ref, where('participants', 'array-contains', myUid), orderBy('lastMessageAt', 'desc'));
+      const q = query(ref, where('participants', 'array-contains', myUid));
       const unsub = onSnapshot(q,
-        snap => observer.next(snap.docs.map(d => ({ id: d.id, ...d.data() } as Chat))),
+        snap => {
+          const chats = snap.docs
+            .map(d => ({ id: d.id, ...d.data() } as Chat))
+            .sort((a, b) => {
+              const ta = (a.lastMessageAt as any)?.toMillis?.() ?? 0;
+              const tb = (b.lastMessageAt as any)?.toMillis?.() ?? 0;
+              return tb - ta;
+            });
+          observer.next(chats);
+        },
         err => {
           console.error('getMyChats error:', err);
-          // fallback: getDocs one-shot
-          getDocs(q).then(snap => observer.next(snap.docs.map(d => ({ id: d.id, ...d.data() } as Chat))))
-                    .catch(() => observer.next([]));
+          getDocs(q)
+            .then(snap => observer.next(snap.docs.map(d => ({ id: d.id, ...d.data() } as Chat))))
+            .catch(() => observer.next([]));
         }
       );
       return () => unsub();

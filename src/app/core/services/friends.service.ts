@@ -75,11 +75,12 @@ export class FriendsService {
     return snap.docs.map(d => d.data() as SciUser);
   }
 
-  /** Obtiene todos los usuarios para "Buscar amigos" */
+  /** Obtiene todos los usuarios para "Buscar amigos" — sin orderBy para evitar índice */
   async getAllUsers(): Promise<SciUser[]> {
     const ref = collection(this.firestore, 'users');
-    const q = query(ref, orderBy('xp', 'desc'));
-    const snap = await getDocs(q);
-    return snap.docs.map(d => d.data() as SciUser);
+    const snap = await getDocs(ref);
+    return snap.docs
+      .map(d => ({ uid: d.id, ...d.data() } as SciUser))
+      .sort((a, b) => (b.xp || 0) - (a.xp || 0));
   }
 }

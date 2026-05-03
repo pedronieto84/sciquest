@@ -54,7 +54,7 @@ export class BuscarAmigosComponent implements OnInit {
 
     const enriched: UserWithStatus[] = await Promise.all(
       users
-        .filter(u => u.uid !== myUid && u.username) // excluir a mí mismo y sin username
+        .filter(u => u.uid !== myUid) // excluir solo a mí mismo
         .map(async u => ({
           ...u,
           isFriend: await this.friendsService.isFriend(myUid, u.uid),
