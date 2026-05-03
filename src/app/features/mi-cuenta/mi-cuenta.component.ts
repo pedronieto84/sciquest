@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule, NavigationEnd } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { FriendsService } from '../../core/services/friends.service';
+// FriendNotification type imported indirectly via service
 import { ChatService } from '../../core/services/chat.service';
 import { Firestore, doc, getDoc } from '@angular/fire/firestore';
 import { Auth, user } from '@angular/fire/auth';
@@ -47,10 +48,10 @@ export class MiCuentaComponent implements OnInit, OnDestroy {
           if (snap.exists()) this.sciUser.set(snap.data() as SciUser);
         } catch(e) { console.error('mi-cuenta user load error:', e); }
 
-        // Badge solicitudes
+        // Badge nuevos amigos
         this.subs.push(
-          this.friendsService.getPendingRequests(u.uid).subscribe(reqs => {
-            this.pendingRequestsCount.set(reqs.length);
+          this.friendsService.getNotifications(u.uid).subscribe(notifs => {
+            this.pendingRequestsCount.set(notifs.length);
           })
         );
 

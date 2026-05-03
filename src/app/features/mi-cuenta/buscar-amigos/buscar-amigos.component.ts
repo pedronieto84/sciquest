@@ -10,7 +10,7 @@ import { ChatService } from '../../../core/services/chat.service';
 import { SciUser } from '../../../core/models/user.model';
 
 interface UserWithStatus extends SciUser {
-  status: 'none' | 'friend' | 'pending';
+  status: 'none' | 'friend';
   acting: boolean;
 }
 
@@ -31,42 +31,29 @@ export class BuscarAmigosComponent implements OnInit {
   allUsers = signal<UserWithStatus[]>([]);
   filteredUsers = signal<UserWithStatus[]>([]);
   loading = signal(true);
-  myUid = signal<string>('');
+  myUid = signal('');
   myUser = signal<SciUser | null>(null);
 
   async ngOnInit() {
     const fireUser = await firstValueFrom(user(this.auth));
     if (!fireUser) return;
     this.myUid.set(fireUser.uid);
-
     const snap = await getDoc(doc(this.firestore, `users/${fireUser.uid}`));
     if (snap.exists()) this.myUser.set(snap.data() as SciUser);
-
     await this.loadUsers();
   }
 
   async loadUsers() {
     this.loading.set(true);
     const myUid = this.myUid();
-
-    // Cargar datos propios en paralelo (sin tocar datos ajenos)
-    const [users, friendsSnap, outgoingSnap] = await Promise.all([
+    const [users, friendsSnap] = await Promise.all([
       this.friendsService.getAllUsers(),
       getDocs(collection(this.firestore, `friendships/${myUid}/friends`)),
-      getDocs(collection(this.firestore, `friendRequests/${myUid}/outgoing`)),
     ]);
-
     const friendSet = new Set(friendsSnap.docs.map(d => d.id));
-    const pendingSet = new Set(outgoingSnap.docs.map(d => d.id));
-
     const enriched: UserWithStatus[] = users
       .filter(u => u.uid !== myUid)
-      .map(u => ({
-        ...u,
-        status: friendSet.has(u.uid) ? 'friend' : pendingSet.has(u.uid) ? 'pending' : 'none',
-        acting: false,
-      }));
-
+      .map(u => ({ ...u, status: friendSet.has(u.uid) ? 'friend' : 'none', acting: false }));
     this.allUsers.set(enriched);
     this.filteredUsers.set(enriched);
     this.loading.set(false);
@@ -75,23 +62,19 @@ export class BuscarAmigosComponent implements OnInit {
   onSearch() {
     const term = this.searchTerm.toLowerCase().trim();
     if (!term) { this.filteredUsers.set(this.allUsers()); return; }
-    this.filteredUsers.set(
-      this.allUsers().filter(u =>
-        (u.username || '').toLowerCase().includes(term) ||
-        (u.displayName || '').toLowerCase().includes(term),
-      ),
-    );
+    this.filteredUsers.set(this.allUsers().filter(u =>
+      (u.username || '').toLowerCase().includes(term) ||
+      (u.displayName || '').toLowerCase().includes(term),
+    ));
   }
 
-  async sendRequest(targetUser: UserWithStatus) {
+  async addFriend(targetUser: UserWithStatus) {
     const me = this.myUser();
     if (!me || targetUser.acting) return;
     targetUser.acting = true;
     this.filteredUsers.update(l => [...l]);
-
-    await this.friendsService.sendRequest(me, targetUser.uid);
-
-    targetUser.status = 'pending';
+    await this.friendsService.addFriend(me, targetUser);
+    targetUser.status = 'friend';
     targetUser.acting = false;
     this.filteredUsers.update(l => [...l]);
   }

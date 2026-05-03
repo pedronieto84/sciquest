@@ -5,8 +5,7 @@ import { Auth, user } from '@angular/fire/auth';
 import { Subscription } from 'rxjs';
 import { FriendsService } from '../../../core/services/friends.service';
 import { ChatService } from '../../../core/services/chat.service';
-import { AuthService } from '../../../core/services/auth.service';
-import { Friend, FriendRequest } from '../../../core/models/friendship.model';
+import { Friend } from '../../../core/models/friendship.model';
 import { SciUser } from '../../../core/models/user.model';
 import { Firestore, doc, getDoc } from '@angular/fire/firestore';
 
@@ -18,17 +17,14 @@ import { Firestore, doc, getDoc } from '@angular/fire/firestore';
 })
 export class AmigosComponent implements OnInit, OnDestroy {
   private auth = inject(Auth);
-  private authService = inject(AuthService);
   private friendsService = inject(FriendsService);
   private chatService = inject(ChatService);
   private firestore = inject(Firestore);
   private router = inject(Router);
 
   friends = signal<Friend[]>([]);
-  pendingRequests = signal<FriendRequest[]>([]);
   loading = signal(true);
   myUser = signal<SciUser | null>(null);
-
   private subs: Subscription[] = [];
 
   ngOnInit() {
@@ -38,37 +34,16 @@ export class AmigosComponent implements OnInit, OnDestroy {
         try {
           const snap = await getDoc(doc(this.firestore, `users/${u.uid}`));
           if (snap.exists()) this.myUser.set(snap.data() as SciUser);
-          const friends = await this.friendsService.getFriendsList(u.uid);
-          this.friends.set(friends);
-        } catch(e) { console.error('amigos load error:', e); }
+          this.friends.set(await this.friendsService.getFriendsList(u.uid));
+          // Limpiar notificaciones al abrir la pestaña
+          await this.friendsService.clearNotifications(u.uid);
+        } catch(e) { console.error(e); }
         finally { this.loading.set(false); }
-
-        // Solicitudes en tiempo real
-        this.subs.push(
-          this.friendsService.getPendingRequests(u.uid).subscribe(reqs => {
-            this.pendingRequests.set(reqs);
-          })
-        );
-      }),
+      })
     );
   }
 
   ngOnDestroy() { this.subs.forEach(s => s.unsubscribe()); }
-
-  async acceptRequest(req: FriendRequest) {
-    const me = this.myUser();
-    if (!me) return;
-    await this.friendsService.acceptRequest(me, req);
-    // Recarga amigos
-    const friends = await this.friendsService.getFriendsList(me.uid);
-    this.friends.set(friends);
-  }
-
-  async rejectRequest(req: FriendRequest) {
-    const me = this.myUser();
-    if (!me) return;
-    await this.friendsService.rejectRequest(me.uid, req.fromUid);
-  }
 
   async openChat(friend: Friend) {
     const me = this.myUser();

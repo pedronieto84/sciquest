@@ -37,12 +37,8 @@
                 💬
               </button>
               <span class="text-green-400 text-xs font-bold flex items-center px-2">✓ Amigo</span>
-            } @else if (u.status === 'pending') {
-              <span class="text-amber-400 text-xs font-bold flex items-center gap-1 px-2">
-                ⏳ Enviada
-              </span>
             } @else {
-              <button (click)="sendRequest(u)" [disabled]="u.acting"
+              <button (click)="addFriend(u)" [disabled]="u.acting"
                 class="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-bold px-3 py-2 rounded-xl active:scale-95 transition-all">
                 @if (u.acting) { ⏳ } @else { ➕ Agregar }
               </button>
