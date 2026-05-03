@@ -2,7 +2,7 @@ import { Component, signal, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { PASAPALABRA_CLUES, PasapalabraClue } from './pasapalabra.data';
+import { PASAPALABRA_SETS, PasapalabraClue } from './pasapalabra.data';
 
 type LetterState = 'pending' | 'correct' | 'wrong' | 'passed';
 type GameState = 'idle' | 'playing' | 'finished';
@@ -25,7 +25,7 @@ export class PasapalabraComponent implements OnDestroy {
   letters = signal<LetterStatus[]>([]);
   currentLetterIndex = signal(0);
   userInput = signal('');
-  timeLeft = signal(180); // 3 minutos
+  timeLeft = signal(300); // 5 minutos
   showResult = signal<'correct' | 'wrong' | null>(null);
   rounds = signal(0);
   private timer: any;
@@ -59,14 +59,16 @@ export class PasapalabraComponent implements OnDestroy {
   }
 
   startGame() {
-    const statuses: LetterStatus[] = PASAPALABRA_CLUES.map(clue => ({
+    // Selecciona un set aleatorio diferente al anterior si es posible
+    const randomSet = PASAPALABRA_SETS[Math.floor(Math.random() * PASAPALABRA_SETS.length)];
+    const statuses: LetterStatus[] = randomSet.map(clue => ({
       letter: clue.letter,
       state: 'pending' as LetterState,
       clue,
     }));
     this.letters.set(statuses);
     this.currentLetterIndex.set(0);
-    this.timeLeft.set(180);
+    this.timeLeft.set(300);
     this.rounds.set(0);
     this.gameState.set('playing');
     this.userInput.set('');
