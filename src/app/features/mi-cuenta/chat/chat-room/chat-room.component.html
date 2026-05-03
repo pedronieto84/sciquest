@@ -1,9 +1,10 @@
-<div class="bg-[#0f172a] h-full flex flex-col">
+<!-- Chat-room: capa fija que ocupa todo el viewport -->
+<div class="fixed inset-0 z-50 bg-[#0f172a] flex flex-col">
 
-  <!-- Header del chat — fijo arriba (flex-shrink-0, no sticky necesario) -->
-  <div class="flex-shrink-0 bg-[#1e293b] px-4 pt-4 pb-4 border-b border-slate-700/50">
+  <!-- ── BLOQUE 1: HEADER (altura fija) ───────────────────────── -->
+  <div class="flex-shrink-0 bg-[#1e293b] border-b border-slate-700/50 px-4 py-3 safe-top">
     <div class="max-w-lg mx-auto flex items-center gap-3">
-      <button (click)="goBack()" class="text-slate-400 hover:text-white transition-colors">
+      <button (click)="goBack()" class="text-slate-400 hover:text-white transition-colors p-1">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
         </svg>
@@ -11,15 +12,15 @@
       <div class="w-10 h-10 rounded-2xl bg-slate-700 flex items-center justify-center text-xl flex-shrink-0">
         {{ getAvatar(otherUser()) }}
       </div>
-      <div class="flex-1">
-        <p class="text-white font-bold text-sm">{{ otherUser()?.displayName || 'Usuario' }}</p>
-        <p class="text-slate-400 text-xs">@{{ otherUser()?.username || '' }}</p>
+      <div class="flex-1 min-w-0">
+        <p class="text-white font-bold text-sm truncate">{{ otherUser()?.displayName || 'Usuario' }}</p>
+        <p class="text-slate-400 text-xs truncate">@{{ otherUser()?.username || '' }}</p>
       </div>
     </div>
   </div>
 
-  <!-- Mensajes — área scrollable interna (flex-1 + overflow-y-auto) -->
-  <div class="flex-1 overflow-y-auto px-4 py-4 pb-2">
+  <!-- ── BLOQUE 2: MENSAJES (ocupa todo el espacio disponible + scroll) ── -->
+  <div class="flex-1 overflow-y-auto px-4 py-4">
     <div class="max-w-lg mx-auto flex flex-col gap-2">
 
       @if (loading()) {
@@ -38,7 +39,9 @@
               ? 'bg-indigo-600 text-white rounded-2xl rounded-tr-sm px-4 py-2.5 max-w-[75%]'
               : 'bg-[#1e293b] border border-slate-700/50 text-slate-100 rounded-2xl rounded-tl-sm px-4 py-2.5 max-w-[75%]'">
               <p class="text-sm leading-relaxed whitespace-pre-wrap break-words">{{ msg.text }}</p>
-              <p [class]="isMyMessage(msg) ? 'text-indigo-300 text-xs mt-1 text-right' : 'text-slate-500 text-xs mt-1 text-right'">
+              <p [class]="isMyMessage(msg)
+                ? 'text-indigo-300 text-xs mt-1 text-right'
+                : 'text-slate-500 text-xs mt-1 text-right'">
                 {{ formatTime(msg.createdAt) }}
               </p>
             </div>
@@ -50,27 +53,30 @@
     </div>
   </div>
 
-  <!-- Input de mensaje — fijo al bottom (flex-shrink-0, no sticky) -->
-  <div class="flex-shrink-0 bg-[#1e293b] border-t border-slate-700/50 px-4 py-3 pb-8">
+  <!-- ── BLOQUE 3: INPUT (altura fija, siempre visible al fondo) ── -->
+  <div class="flex-shrink-0 bg-[#1e293b] border-t border-slate-700/50 px-4 py-3 pb-safe">
     <div class="max-w-lg mx-auto flex items-end gap-2">
       <textarea
         [(ngModel)]="newMessage"
         (keydown)="onKeydown($event)"
         placeholder="Escribe un mensaje..."
         rows="1"
-        class="flex-1 bg-slate-800 border border-slate-700 text-white placeholder-slate-500 rounded-2xl
-               px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 transition-colors resize-none
-               max-h-32 overflow-y-auto"
+        class="flex-1 bg-slate-800 border border-slate-700 text-white placeholder-slate-500
+               rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500
+               transition-colors resize-none max-h-32 overflow-y-auto"
       ></textarea>
-      <button (click)="send()" [disabled]="!newMessage.trim() || sending()"
-        class="w-11 h-11 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed
-               text-white rounded-2xl flex items-center justify-center flex-shrink-0
-               active:scale-95 transition-all">
+      <button
+        (click)="send()"
+        [disabled]="!newMessage.trim() || sending()"
+        class="w-11 h-11 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40
+               disabled:cursor-not-allowed text-white rounded-2xl flex items-center
+               justify-center flex-shrink-0 active:scale-95 transition-all">
         @if (sending()) {
           <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
         } @else {
           <svg class="w-5 h-5 rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
           </svg>
         }
       </button>
