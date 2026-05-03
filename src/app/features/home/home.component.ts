@@ -2,10 +2,10 @@ import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
-import { Firestore, docData } from '@angular/fire/firestore';
+import { Firestore, doc, getDoc } from '@angular/fire/firestore';
 import { SciUser, LEVEL_XP_THRESHOLDS } from '../../core/models/user.model';
 import { Auth, user } from '@angular/fire/auth';
-import { switchMap, of, Subscription } from 'rxjs';
+import { Subscription } from 'rxjs';
 import { PromoCodeComponent } from '../../shared/promo-code/promo-code.component';
 import { QuizService } from '../../core/services/quiz.service';
 
@@ -34,12 +34,18 @@ export class HomeComponent implements OnInit, OnDestroy {
   ];
 
   ngOnInit() {
-    this.sub = user(this.auth).pipe(
-      switchMap(u => {
-        if (!u) return of(null);
-        return docData(this.authService.getUserDoc(u.uid)) as any;
-      }),
-    ).subscribe(u => this.sciUser.set(u as SciUser | null));
+    // Usar getDoc (one-shot) en vez de docData (real-time) para evitar fallos silenciosos
+    this.sub = user(this.auth).subscribe(async fireUser => {
+      if (!fireUser) { this.sciUser.set(null); return; }
+      try {
+        const snap = await getDoc(doc(this.firestore, `users/${fireUser.uid}`));
+        if (snap.exists()) {
+          this.sciUser.set(snap.data() as SciUser);
+        }
+      } catch (e) {
+        console.error('Error loading user doc:', e);
+      }
+    });
 
     // Precarga todas las preguntas en background para que el quiz sea instantáneo
     this.quizService.preloadAll();
