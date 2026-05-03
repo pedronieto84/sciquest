@@ -3,10 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Auth, user } from '@angular/fire/auth';
-import { Firestore, docData, doc, getDoc } from '@angular/fire/firestore';
-import { switchMap, of, Subscription, firstValueFrom } from 'rxjs';
+import { Firestore, doc, getDoc } from '@angular/fire/firestore';
+import { Subscription, firstValueFrom } from 'rxjs';
 import { ChatService } from '../../../../core/services/chat.service';
-import { AuthService } from '../../../../core/services/auth.service';
 import { ChatMessage } from '../../../../core/models/chat.model';
 import { SciUser } from '../../../../core/models/user.model';
 
@@ -22,7 +21,6 @@ export class ChatRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private auth = inject(Auth);
-  private authService = inject(AuthService);
   private chatService = inject(ChatService);
   private firestore = inject(Firestore);
 
@@ -45,8 +43,10 @@ export class ChatRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.myUid.set(fireUser.uid);
 
     // Carga el usuario propio
-    const me = await firstValueFrom(docData(this.authService.getUserDoc(fireUser.uid)) as any);
-    this.myUser.set(me as SciUser);
+    const meSnap = await getDoc(doc(this.firestore, `users/${fireUser.uid}`));
+    if (!meSnap.exists()) return;
+    const me = { uid: fireUser.uid, ...meSnap.data() } as SciUser;
+    this.myUser.set(me);
 
     // Carga el usuario del otro
     const friendUid = this.route.snapshot.paramMap.get('friendUid')!;
