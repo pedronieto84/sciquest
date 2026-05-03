@@ -4,42 +4,79 @@
     <div class="flex justify-center py-14">
       <div class="w-8 h-8 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin"></div>
     </div>
-  } @else if (friends().length === 0) {
-    <div class="text-center py-16">
-      <div class="text-6xl mb-4">👥</div>
-      <p class="text-slate-300 font-bold text-lg mb-2">Aún no tienes amigos</p>
-      <p class="text-slate-500 text-sm mb-6">¡Busca personas y empieza a conectar!</p>
-      <button routerLink="/mi-cuenta/buscar-amigos"
-        class="bg-indigo-600 text-white font-bold px-6 py-3 rounded-2xl active:scale-95 transition-all">
-        🔍 Buscar Amigos
-      </button>
-    </div>
   } @else {
-    <div class="mb-3">
-      <p class="text-slate-400 text-sm font-medium">{{ friends().length }} amigo{{ friends().length !== 1 ? 's' : '' }}</p>
-    </div>
-    <div class="flex flex-col gap-3">
-      @for (friend of friends(); track friend.uid) {
-        <div class="bg-[#1e293b] border border-slate-700/50 rounded-2xl p-4 flex items-center gap-3">
-          <div class="w-12 h-12 rounded-2xl bg-slate-700 flex items-center justify-center text-2xl flex-shrink-0">
-            {{ getAvatar(friend) }}
-          </div>
-          <div class="flex-1 min-w-0">
-            <p class="text-white font-bold text-sm truncate">{{ friend.displayName }}</p>
-            <p class="text-slate-400 text-xs">@{{ friend.username || 'sin username' }}</p>
-          </div>
-          <div class="flex gap-2">
-            <button (click)="openChat(friend)"
-              class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-3 py-2 rounded-xl active:scale-95 transition-all">
-              💬
-            </button>
-            <button (click)="removeFriend(friend)"
-              class="bg-slate-700 hover:bg-red-900/40 text-slate-400 hover:text-red-400 text-xs font-bold px-3 py-2 rounded-xl active:scale-95 transition-all">
-              ✕
-            </button>
-          </div>
+
+    <!-- Solicitudes pendientes -->
+    @if (pendingRequests().length > 0) {
+      <div class="mb-5">
+        <p class="text-slate-400 text-sm font-medium mb-3">
+          🔔 Solicitudes de amistad
+          <span class="ml-1 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{{ pendingRequests().length }}</span>
+        </p>
+        <div class="flex flex-col gap-3">
+          @for (req of pendingRequests(); track req.fromUid) {
+            <div class="bg-indigo-600/10 border border-indigo-500/30 rounded-2xl p-4 flex items-center gap-3">
+              <div class="w-12 h-12 rounded-2xl bg-slate-700 flex items-center justify-center text-2xl flex-shrink-0">
+                {{ getAvatar(req.fromAvatar) }}
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-white font-bold text-sm truncate">{{ req.fromDisplayName }}</p>
+                <p class="text-slate-400 text-xs">@{{ req.fromUsername || 'sin username' }}</p>
+              </div>
+              <div class="flex gap-2">
+                <button (click)="acceptRequest(req)"
+                  class="bg-green-600 hover:bg-green-500 text-white text-xs font-bold px-3 py-2 rounded-xl active:scale-95 transition-all">
+                  ✓ Aceptar
+                </button>
+                <button (click)="rejectRequest(req)"
+                  class="bg-slate-700 hover:bg-red-900/40 text-slate-400 hover:text-red-400 text-xs font-bold px-3 py-2 rounded-xl active:scale-95 transition-all">
+                  ✕
+                </button>
+              </div>
+            </div>
+          }
         </div>
-      }
-    </div>
+      </div>
+    }
+
+    <!-- Lista de amigos -->
+    @if (friends().length === 0 && pendingRequests().length === 0) {
+      <div class="text-center py-16">
+        <div class="text-6xl mb-4">👥</div>
+        <p class="text-slate-300 font-bold text-lg mb-2">Aún no tienes amigos</p>
+        <p class="text-slate-500 text-sm mb-6">¡Busca personas y empieza a conectar!</p>
+        <button routerLink="/mi-cuenta/buscar-amigos"
+          class="bg-indigo-600 text-white font-bold px-6 py-3 rounded-2xl active:scale-95 transition-all">
+          🔍 Buscar Amigos
+        </button>
+      </div>
+    } @else if (friends().length > 0) {
+      <div class="mb-3">
+        <p class="text-slate-400 text-sm font-medium">{{ friends().length }} amigo{{ friends().length !== 1 ? 's' : '' }}</p>
+      </div>
+      <div class="flex flex-col gap-3">
+        @for (friend of friends(); track friend.uid) {
+          <div class="bg-[#1e293b] border border-slate-700/50 rounded-2xl p-4 flex items-center gap-3">
+            <div class="w-12 h-12 rounded-2xl bg-slate-700 flex items-center justify-center text-2xl flex-shrink-0">
+              {{ getAvatar(friend.avatar) }}
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-white font-bold text-sm truncate">{{ friend.displayName }}</p>
+              <p class="text-slate-400 text-xs">@{{ friend.username || 'sin username' }}</p>
+            </div>
+            <div class="flex gap-2">
+              <button (click)="openChat(friend)"
+                class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-3 py-2 rounded-xl active:scale-95 transition-all">
+                💬
+              </button>
+              <button (click)="removeFriend(friend)"
+                class="bg-slate-700 hover:bg-red-900/40 text-slate-400 hover:text-red-400 text-xs font-bold px-3 py-2 rounded-xl active:scale-95 transition-all">
+                ✕
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    }
   }
 </div>

@@ -7,12 +7,11 @@ import { Firestore, doc, getDoc } from '@angular/fire/firestore';
 import { firstValueFrom } from 'rxjs';
 import { FriendsService } from '../../../core/services/friends.service';
 import { ChatService } from '../../../core/services/chat.service';
-import { AuthService } from '../../../core/services/auth.service';
 import { SciUser } from '../../../core/models/user.model';
 
 interface UserWithStatus extends SciUser {
-  isFriend: boolean;
-  adding: boolean;
+  status: 'none' | 'friend' | 'pending';
+  acting: boolean;
 }
 
 @Component({
@@ -23,7 +22,6 @@ interface UserWithStatus extends SciUser {
 })
 export class BuscarAmigosComponent implements OnInit {
   private auth = inject(Auth);
-  private authService = inject(AuthService);
   private friendsService = inject(FriendsService);
   private chatService = inject(ChatService);
   private firestore = inject(Firestore);
@@ -54,11 +52,11 @@ export class BuscarAmigosComponent implements OnInit {
 
     const enriched: UserWithStatus[] = await Promise.all(
       users
-        .filter(u => u.uid !== myUid) // excluir solo a mí mismo
+        .filter(u => u.uid !== myUid)
         .map(async u => ({
           ...u,
-          isFriend: await this.friendsService.isFriend(myUid, u.uid),
-          adding: false,
+          status: await this.friendsService.getRelationStatus(myUid, u.uid),
+          acting: false,
         })),
     );
 
@@ -69,29 +67,24 @@ export class BuscarAmigosComponent implements OnInit {
 
   onSearch() {
     const term = this.searchTerm.toLowerCase().trim();
-    if (!term) {
-      this.filteredUsers.set(this.allUsers());
-      return;
-    }
+    if (!term) { this.filteredUsers.set(this.allUsers()); return; }
     this.filteredUsers.set(
       this.allUsers().filter(u =>
-        u.username?.toLowerCase().includes(term) ||
-        u.displayName?.toLowerCase().includes(term),
+        (u.username || '').toLowerCase().includes(term) ||
+        (u.displayName || '').toLowerCase().includes(term),
       ),
     );
   }
 
-  async addFriend(targetUser: UserWithStatus) {
+  async sendRequest(targetUser: UserWithStatus) {
     const me = this.myUser();
-    if (!me || targetUser.adding) return;
-
-    targetUser.adding = true;
-    this.filteredUsers.update(list => [...list]);
-
-    await this.friendsService.addFriend(me.uid, targetUser);
-    targetUser.isFriend = true;
-    targetUser.adding = false;
-    this.filteredUsers.update(list => [...list]);
+    if (!me || targetUser.acting) return;
+    targetUser.acting = true;
+    this.filteredUsers.update(l => [...l]);
+    await this.friendsService.sendRequest(me, targetUser.uid);
+    targetUser.status = 'pending';
+    targetUser.acting = false;
+    this.filteredUsers.update(l => [...l]);
   }
 
   async openChat(targetUser: UserWithStatus) {

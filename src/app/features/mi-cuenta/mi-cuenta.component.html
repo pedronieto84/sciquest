@@ -19,30 +19,46 @@
       </div>
     </div>
 
-    <!-- Tabs -->
+    <!-- Tabs con badges -->
     <div class="max-w-lg mx-auto mt-4 grid grid-cols-3 gap-1 bg-slate-800/60 rounded-2xl p-1">
+
+      <!-- Amigos -->
       <button (click)="goTab('amigos')"
         [class]="activeTab() === 'amigos'
-          ? 'bg-indigo-600 text-white font-bold rounded-xl py-2 text-sm transition-all'
-          : 'text-slate-400 hover:text-white rounded-xl py-2 text-sm transition-all'">
+          ? 'relative bg-indigo-600 text-white font-bold rounded-xl py-2 text-sm transition-all'
+          : 'relative text-slate-400 hover:text-white rounded-xl py-2 text-sm transition-all'">
         👥 Amigos
+        @if (pendingRequestsCount() > 0) {
+          <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-black w-5 h-5 rounded-full flex items-center justify-center shadow-lg">
+            {{ pendingRequestsCount() > 9 ? '9+' : pendingRequestsCount() }}
+          </span>
+        }
       </button>
+
+      <!-- Chat -->
       <button (click)="goTab('chat')"
         [class]="activeTab() === 'chat'
-          ? 'bg-indigo-600 text-white font-bold rounded-xl py-2 text-sm transition-all'
-          : 'text-slate-400 hover:text-white rounded-xl py-2 text-sm transition-all'">
+          ? 'relative bg-indigo-600 text-white font-bold rounded-xl py-2 text-sm transition-all'
+          : 'relative text-slate-400 hover:text-white rounded-xl py-2 text-sm transition-all'">
         💬 Chat
+        @if (unreadChatsCount() > 0) {
+          <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-black w-5 h-5 rounded-full flex items-center justify-center shadow-lg">
+            {{ unreadChatsCount() > 9 ? '9+' : unreadChatsCount() }}
+          </span>
+        }
       </button>
+
+      <!-- Buscar -->
       <button (click)="goTab('buscar-amigos')"
         [class]="activeTab() === 'buscar-amigos'
-          ? 'bg-indigo-600 text-white font-bold rounded-xl py-2 text-sm transition-all'
-          : 'text-slate-400 hover:text-white rounded-xl py-2 text-sm transition-all'">
+          ? 'relative bg-indigo-600 text-white font-bold rounded-xl py-2 text-sm transition-all'
+          : 'relative text-slate-400 hover:text-white rounded-xl py-2 text-sm transition-all'">
         🔍 Buscar
       </button>
     </div>
   </div>
 
-  <!-- Content via child routes -->
+  <!-- Content -->
   <div class="flex-1 overflow-y-auto">
     <router-outlet></router-outlet>
   </div>

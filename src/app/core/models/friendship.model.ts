@@ -3,5 +3,13 @@ export interface Friend {
   username: string;
   displayName: string;
   avatar: string;
-  addedAt: any; // Firestore Timestamp
+  addedAt: any;
+}
+
+export interface FriendRequest {
+  fromUid: string;
+  fromDisplayName: string;
+  fromUsername: string;
+  fromAvatar: string;
+  createdAt: any;
 }

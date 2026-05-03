@@ -5,80 +5,88 @@ import {
   doc,
   setDoc,
   deleteDoc,
-  collectionData,
   getDoc,
   getDocs,
-  query,
-  where,
-  orderBy,
   serverTimestamp,
+  onSnapshot,
 } from '@angular/fire/firestore';
-import { Observable, of } from 'rxjs';
-import { Friend } from '../models/friendship.model';
+import { Observable } from 'rxjs';
+import { Friend, FriendRequest } from '../models/friendship.model';
 import { SciUser } from '../models/user.model';
 
 @Injectable({ providedIn: 'root' })
 export class FriendsService {
   private firestore = inject(Firestore);
 
-  /** Lista reactiva de amigos del usuario (real-time — puede fallar silenciosamente) */
-  getFriends(myUid: string): Observable<Friend[]> {
-    const ref = collection(this.firestore, `friendships/${myUid}/friends`);
-    return collectionData(ref, { idField: 'uid' }) as Observable<Friend[]>;
-  }
-
-  /** Lista de amigos one-shot (fiable) */
+  /** Lista de amigos one-shot */
   async getFriendsList(myUid: string): Promise<Friend[]> {
-    const ref = collection(this.firestore, `friendships/${myUid}/friends`);
-    const snap = await getDocs(ref);
+    const snap = await getDocs(collection(this.firestore, `friendships/${myUid}/friends`));
     return snap.docs.map(d => ({ uid: d.id, ...d.data() } as Friend));
   }
 
-  /** Agrega a alguien como amigo (unilateral, sin necesidad de aceptación) */
-  async addFriend(myUid: string, target: SciUser): Promise<void> {
-    const ref = doc(this.firestore, `friendships/${myUid}/friends/${target.uid}`);
+  /** Envía solicitud de amistad */
+  async sendRequest(fromUser: SciUser, toUid: string): Promise<void> {
+    const ref = doc(this.firestore, `friendRequests/${toUid}/incoming/${fromUser.uid}`);
     await setDoc(ref, {
-      uid: target.uid,
-      username: target.username || '',
-      displayName: target.displayName || '',
-      avatar: target.avatar || '🔬',
-      addedAt: serverTimestamp(),
+      fromUid: fromUser.uid,
+      fromDisplayName: fromUser.displayName || '',
+      fromUsername: fromUser.username || '',
+      fromAvatar: fromUser.avatar || '🔬',
+      createdAt: serverTimestamp(),
     });
   }
 
-  /** Elimina un amigo */
+  /** Acepta solicitud: añade amigo en ambas direcciones y elimina la solicitud */
+  async acceptRequest(myUser: SciUser, req: FriendRequest): Promise<void> {
+    const addMe = doc(this.firestore, `friendships/${myUser.uid}/friends/${req.fromUid}`);
+    const addThem = doc(this.firestore, `friendships/${req.fromUid}/friends/${myUser.uid}`);
+    const reqRef = doc(this.firestore, `friendRequests/${myUser.uid}/incoming/${req.fromUid}`);
+    await Promise.all([
+      setDoc(addMe, { uid: req.fromUid, username: req.fromUsername, displayName: req.fromDisplayName, avatar: req.fromAvatar, addedAt: serverTimestamp() }),
+      setDoc(addThem, { uid: myUser.uid, username: myUser.username || '', displayName: myUser.displayName || '', avatar: myUser.avatar || '🔬', addedAt: serverTimestamp() }),
+      deleteDoc(reqRef),
+    ]);
+  }
+
+  /** Rechaza solicitud */
+  async rejectRequest(myUid: string, fromUid: string): Promise<void> {
+    await deleteDoc(doc(this.firestore, `friendRequests/${myUid}/incoming/${fromUid}`));
+  }
+
+  /** Solicitudes pendientes en tiempo real */
+  getPendingRequests(myUid: string): Observable<FriendRequest[]> {
+    return new Observable(obs => {
+      const ref = collection(this.firestore, `friendRequests/${myUid}/incoming`);
+      const unsub = onSnapshot(ref,
+        snap => obs.next(snap.docs.map(d => d.data() as FriendRequest)),
+        err => { console.error('requests error:', err); obs.next([]); }
+      );
+      return () => unsub();
+    });
+  }
+
+  /** Comprueba si ya es amigo o tiene solicitud pendiente */
+  async getRelationStatus(myUid: string, targetUid: string): Promise<'friend' | 'pending' | 'none'> {
+    const [friendSnap, reqSnap] = await Promise.all([
+      getDoc(doc(this.firestore, `friendships/${myUid}/friends/${targetUid}`)),
+      getDoc(doc(this.firestore, `friendRequests/${targetUid}/incoming/${myUid}`)),
+    ]);
+    if (friendSnap.exists()) return 'friend';
+    if (reqSnap.exists()) return 'pending';
+    return 'none';
+  }
+
+  /** Elimina un amigo (bidireccional) */
   async removeFriend(myUid: string, friendUid: string): Promise<void> {
-    const ref = doc(this.firestore, `friendships/${myUid}/friends/${friendUid}`);
-    await deleteDoc(ref);
+    await Promise.all([
+      deleteDoc(doc(this.firestore, `friendships/${myUid}/friends/${friendUid}`)),
+      deleteDoc(doc(this.firestore, `friendships/${friendUid}/friends/${myUid}`)),
+    ]);
   }
 
-  /** Comprueba si ya es amigo */
-  async isFriend(myUid: string, targetUid: string): Promise<boolean> {
-    const ref = doc(this.firestore, `friendships/${myUid}/friends/${targetUid}`);
-    const snap = await getDoc(ref);
-    return snap.exists();
-  }
-
-  /** Busca usuarios por username (búsqueda exacta, case-sensitive en Firestore) */
-  async searchUsers(searchTerm: string): Promise<SciUser[]> {
-    const term = searchTerm.toLowerCase().trim();
-    if (!term) return [];
-    const ref = collection(this.firestore, 'users');
-    // Búsqueda por prefijo de username
-    const q = query(
-      ref,
-      where('username', '>=', term),
-      where('username', '<=', term + '\uf8ff'),
-      orderBy('username'),
-    );
-    const snap = await getDocs(q);
-    return snap.docs.map(d => d.data() as SciUser);
-  }
-
-  /** Obtiene todos los usuarios para "Buscar amigos" — sin orderBy para evitar índice */
+  /** Obtiene todos los usuarios */
   async getAllUsers(): Promise<SciUser[]> {
-    const ref = collection(this.firestore, 'users');
-    const snap = await getDocs(ref);
+    const snap = await getDocs(collection(this.firestore, 'users'));
     return snap.docs
       .map(d => ({ uid: d.id, ...d.data() } as SciUser))
       .sort((a, b) => (b.xp || 0) - (a.xp || 0));
