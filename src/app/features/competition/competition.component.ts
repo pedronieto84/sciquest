@@ -3,13 +3,13 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Auth, user } from '@angular/fire/auth';
-import { Firestore, doc, docData, getDoc } from '@angular/fire/firestore';
+import { Firestore, doc, getDoc } from '@angular/fire/firestore';
 import { ChallengeService } from '../../core/services/challenge.service';
 import { SciUser } from '../../core/models/user.model';
 import { Challenge } from '../../core/models/challenge.model';
 import { QuizService } from '../../core/services/quiz.service';
 import { QuizQuestion, Subject } from '../../core/models/quiz.model';
-import { switchMap, of, Subscription, Observable, take } from 'rxjs';
+import { switchMap, from, of, Subscription, take } from 'rxjs';
 
 type CompState = 'lobby' | 'create' | 'waiting' | 'playing' | 'waiting_results' | 'results';
 
@@ -60,9 +60,13 @@ export class CompetitionComponent implements OnInit, OnDestroy {
   ngOnInit() {
     // Suscripción al usuario autenticado → carga doc de Firestore con getDoc (one-shot, fiable)
     this.userSub = user(this.auth).pipe(
-      switchMap(u => u ? (docData(doc(this.firestore, `users/${u.uid}`)) as Observable<SciUser>) : of(null)),
-    ).subscribe(async u => {
-      if (!u) return;
+      switchMap(u => u
+        ? from(getDoc(doc(this.firestore, `users/${u.uid}`)))
+        : of(null)
+      ),
+    ).subscribe(async snap => {
+      if (!snap || !snap.exists()) return;
+      const u = { uid: snap.id, ...snap.data() } as SciUser;
       const prev = this.currentUser();
       this.currentUser.set(u);
       // Solo cargar datos la primera vez (cuando no había usuario antes)
@@ -71,20 +75,22 @@ export class CompetitionComponent implements OnInit, OnDestroy {
   }
 
   async loadData() {
+    const myUid = this.currentUser()?.uid;
+    if (!myUid) return;
     this.loading.set(true);
 
     // Carga usuarios y retos de forma independiente para que un fallo no bloquee lo otro
     try {
       const users = await this.challengeService.getAllUsers();
-      this.allUsers.set(users.filter(u => u.uid !== this.currentUser()?.uid));
+      this.allUsers.set(users.filter(u => u.uid !== myUid));
     } catch (e) {
       console.error('Error cargando usuarios:', e);
     }
 
     try {
-      const pending = await this.challengeService.getPendingChallenges(this.currentUser()!.uid);
+      const pending = await this.challengeService.getPendingChallenges(myUid);
       // Only show challenges NOT created by current user (opponent's challenges to accept)
-      this.pendingChallenges.set(pending.filter(c => c.createdBy !== this.currentUser()?.uid));
+      this.pendingChallenges.set(pending.filter(c => c.createdBy !== myUid));
     } catch (e) {
       console.error('Error cargando retos pendientes (puede faltar índice en Firestore):', e);
     }
