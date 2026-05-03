@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
-import { Firestore, collection, query, where, orderBy, collectionData } from '@angular/fire/firestore';
+import { Firestore, collection, query, where, collectionData } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { TheoryCard } from '../models/theory.model';
 
 @Injectable({ providedIn: 'root' })
@@ -9,7 +10,10 @@ export class TheoryService {
 
   getCards(subject: string): Observable<TheoryCard[]> {
     const ref = collection(this.firestore, 'theory');
-    const q = query(ref, where('subject', '==', subject), orderBy('order'));
-    return collectionData(q, { idField: 'id' }) as Observable<TheoryCard[]>;
+    // orderBy eliminado para evitar requerir índice compuesto — se ordena en cliente
+    const q = query(ref, where('subject', '==', subject));
+    return (collectionData(q, { idField: 'id' }) as Observable<TheoryCard[]>).pipe(
+      map(cards => cards.sort((a, b) => (a.order ?? 0) - (b.order ?? 0)))
+    );
   }
 }

@@ -29,6 +29,14 @@
       "fields": [
         { "fieldPath": "xp", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "theory",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "subject", "order": "ASCENDING" },
+        { "fieldPath": "order", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []
