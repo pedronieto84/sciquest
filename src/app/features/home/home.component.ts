@@ -8,6 +8,8 @@ import { Auth, user } from '@angular/fire/auth';
 import { Subscription } from 'rxjs';
 import { PromoCodeComponent } from '../../shared/promo-code/promo-code.component';
 import { QuizService } from '../../core/services/quiz.service';
+import { ChatService } from '../../core/services/chat.service';
+import { FriendsService } from '../../core/services/friends.service';
 
 @Component({
   selector: 'app-home',
@@ -20,9 +22,14 @@ export class HomeComponent implements OnInit, OnDestroy {
   private firestore = inject(Firestore);
   private auth = inject(Auth);
   private quizService = inject(QuizService);
+  private chatService = inject(ChatService);
+  private friendsService = inject(FriendsService);
 
   sciUser = signal<SciUser | null>(null);
+  unreadCount = signal(0); // mensajes no leídos + solicitudes de amistad
   private sub?: Subscription;
+  private chatSub?: Subscription;
+  private friendSub?: Subscription;
 
   readonly subjects = [
     { id: 'chemistry', label: 'Química', emoji: '🧪', color: 'from-emerald-600 to-teal-500', route: '/chemistry' },
@@ -34,24 +41,44 @@ export class HomeComponent implements OnInit, OnDestroy {
   ];
 
   ngOnInit() {
-    // Usar getDoc (one-shot) en vez de docData (real-time) para evitar fallos silenciosos
     this.sub = user(this.auth).subscribe(async fireUser => {
-      if (!fireUser) { this.sciUser.set(null); return; }
+      if (!fireUser) { this.sciUser.set(null); this.unreadCount.set(0); return; }
       try {
         const snap = await getDoc(doc(this.firestore, `users/${fireUser.uid}`));
-        if (snap.exists()) {
-          this.sciUser.set(snap.data() as SciUser);
-        }
+        if (snap.exists()) this.sciUser.set(snap.data() as SciUser);
       } catch (e) {
         console.error('Error loading user doc:', e);
       }
+
+      // Suscripción en tiempo real: chats no leídos
+      this.chatSub?.unsubscribe();
+      this.chatSub = this.chatService.getMyChats(fireUser.uid).subscribe(chats => {
+        const unreadChats = chats.filter(c => c.unreadBy?.includes(fireUser.uid)).length;
+        // Combinar con solicitudes de amigos (se actualiza abajo)
+        const friendNotifs = this._friendNotifCount;
+        this.unreadCount.set(unreadChats + friendNotifs);
+        this._chatUnreadCount = unreadChats;
+      });
+
+      // Suscripción en tiempo real: solicitudes de amistad
+      this.friendSub?.unsubscribe();
+      this.friendSub = this.friendsService.getNotifications(fireUser.uid).subscribe(notifs => {
+        this._friendNotifCount = notifs.length;
+        this.unreadCount.set(this._chatUnreadCount + notifs.length);
+      });
     });
 
-    // Precarga todas las preguntas en background para que el quiz sea instantáneo
     this.quizService.preloadAll();
   }
 
-  ngOnDestroy() { this.sub?.unsubscribe(); }
+  private _chatUnreadCount = 0;
+  private _friendNotifCount = 0;
+
+  ngOnDestroy() {
+    this.sub?.unsubscribe();
+    this.chatSub?.unsubscribe();
+    this.friendSub?.unsubscribe();
+  }
 
   get levelProgress(): number {
     const u = this.sciUser();

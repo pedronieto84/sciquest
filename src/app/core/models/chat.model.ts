@@ -10,6 +10,7 @@ export interface Chat {
   participants: string[];
   lastMessage?: string;
   lastMessageAt?: any;
+  unreadBy?: string[]; // uids que tienen mensajes sin leer
   participantData: {
     [uid: string]: {
       username: string;

@@ -59,6 +59,9 @@ export class ChatRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
     const chatId = await this.chatService.getOrCreateChat(me as SciUser, other);
     this.chatId.set(chatId);
 
+    // Marca como leído al entrar
+    await this.chatService.markAsRead(chatId, fireUser.uid);
+
     // Suscribe a mensajes en tiempo real
     this.subs.push(
       this.chatService.getMessages(chatId).subscribe(msgs => {
@@ -85,7 +88,8 @@ export class ChatRoomComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.sending.set(true);
     this.newMessage = '';
     try {
-      await this.chatService.sendMessage(this.chatId(), this.myUid(), text);
+      const participants = [this.myUid(), this.otherUser()?.uid].filter(Boolean) as string[];
+      await this.chatService.sendMessage(this.chatId(), this.myUid(), text, participants);
       this.shouldScrollToBottom = true;
     } finally {
       this.sending.set(false);

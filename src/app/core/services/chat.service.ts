@@ -5,14 +5,13 @@ import {
   setDoc,
   updateDoc,
   collection,
-  collectionData,
   addDoc,
   query,
-  orderBy,
   serverTimestamp,
   where,
   getDocs,
   onSnapshot,
+  arrayRemove,
 } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
 import { Chat, ChatMessage } from '../models/chat.model';
@@ -46,8 +45,8 @@ export class ChatService {
     return chatId;
   }
 
-  /** Envía un mensaje */
-  async sendMessage(chatId: string, senderId: string, text: string): Promise<void> {
+  /** Envía un mensaje y marca como no leído para el resto de participantes */
+  async sendMessage(chatId: string, senderId: string, text: string, participants: string[]): Promise<void> {
     const msgRef = collection(this.firestore, `chats/${chatId}/messages`);
     const msg: ChatMessage = {
       senderId,
@@ -56,12 +55,20 @@ export class ChatService {
     };
     await addDoc(msgRef, msg);
 
-    // Actualiza el resumen del chat
+    // Actualiza el resumen del chat y marca no leído para los otros participantes
     const chatRef = doc(this.firestore, `chats/${chatId}`);
+    const unreadBy = participants.filter(uid => uid !== senderId);
     await updateDoc(chatRef, {
       lastMessage: text.trim(),
       lastMessageAt: serverTimestamp(),
+      unreadBy,
     });
+  }
+
+  /** Marca el chat como leído para un usuario */
+  async markAsRead(chatId: string, uid: string): Promise<void> {
+    const chatRef = doc(this.firestore, `chats/${chatId}`);
+    await updateDoc(chatRef, { unreadBy: arrayRemove(uid) });
   }
 
   /** Stream de mensajes en tiempo real — ordena en cliente para evitar índice */
