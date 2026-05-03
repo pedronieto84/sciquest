@@ -24,16 +24,19 @@ export class FriendsService {
     return snap.docs.map(d => ({ uid: d.id, ...d.data() } as Friend));
   }
 
-  /** Envía solicitud de amistad */
+  /** Envía solicitud de amistad (escribe en incoming del destinatario y outgoing del remitente) */
   async sendRequest(fromUser: SciUser, toUid: string): Promise<void> {
-    const ref = doc(this.firestore, `friendRequests/${toUid}/incoming/${fromUser.uid}`);
-    await setDoc(ref, {
+    const data = {
       fromUid: fromUser.uid,
       fromDisplayName: fromUser.displayName || '',
       fromUsername: fromUser.username || '',
       fromAvatar: fromUser.avatar || '🔬',
       createdAt: serverTimestamp(),
-    });
+    };
+    await Promise.all([
+      setDoc(doc(this.firestore, `friendRequests/${toUid}/incoming/${fromUser.uid}`), data),
+      setDoc(doc(this.firestore, `friendRequests/${fromUser.uid}/outgoing/${toUid}`), { toUid, createdAt: serverTimestamp() }),
+    ]);
   }
 
   /** Acepta solicitud: añade amigo en ambas direcciones y elimina la solicitud */
@@ -45,12 +48,16 @@ export class FriendsService {
       setDoc(addMe, { uid: req.fromUid, username: req.fromUsername, displayName: req.fromDisplayName, avatar: req.fromAvatar, addedAt: serverTimestamp() }),
       setDoc(addThem, { uid: myUser.uid, username: myUser.username || '', displayName: myUser.displayName || '', avatar: myUser.avatar || '🔬', addedAt: serverTimestamp() }),
       deleteDoc(reqRef),
+      deleteDoc(doc(this.firestore, `friendRequests/${req.fromUid}/outgoing/${myUser.uid}`)),
     ]);
   }
 
   /** Rechaza solicitud */
   async rejectRequest(myUid: string, fromUid: string): Promise<void> {
-    await deleteDoc(doc(this.firestore, `friendRequests/${myUid}/incoming/${fromUid}`));
+    await Promise.all([
+      deleteDoc(doc(this.firestore, `friendRequests/${myUid}/incoming/${fromUid}`)),
+      deleteDoc(doc(this.firestore, `friendRequests/${fromUid}/outgoing/${myUid}`)),
+    ]);
   }
 
   /** Solicitudes pendientes en tiempo real */

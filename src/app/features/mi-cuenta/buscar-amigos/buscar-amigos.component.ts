@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Auth, user } from '@angular/fire/auth';
-import { Firestore, doc, getDoc } from '@angular/fire/firestore';
+import { Firestore, doc, getDoc, getDocs, collection } from '@angular/fire/firestore';
 import { firstValueFrom } from 'rxjs';
 import { FriendsService } from '../../../core/services/friends.service';
 import { ChatService } from '../../../core/services/chat.service';
@@ -48,17 +48,24 @@ export class BuscarAmigosComponent implements OnInit {
   async loadUsers() {
     this.loading.set(true);
     const myUid = this.myUid();
-    const users = await this.friendsService.getAllUsers();
 
-    const enriched: UserWithStatus[] = await Promise.all(
-      users
-        .filter(u => u.uid !== myUid)
-        .map(async u => ({
-          ...u,
-          status: await this.friendsService.getRelationStatus(myUid, u.uid),
-          acting: false,
-        })),
-    );
+    // Cargar datos propios en paralelo (sin tocar datos ajenos)
+    const [users, friendsSnap, outgoingSnap] = await Promise.all([
+      this.friendsService.getAllUsers(),
+      getDocs(collection(this.firestore, `friendships/${myUid}/friends`)),
+      getDocs(collection(this.firestore, `friendRequests/${myUid}/outgoing`)),
+    ]);
+
+    const friendSet = new Set(friendsSnap.docs.map(d => d.id));
+    const pendingSet = new Set(outgoingSnap.docs.map(d => d.id));
+
+    const enriched: UserWithStatus[] = users
+      .filter(u => u.uid !== myUid)
+      .map(u => ({
+        ...u,
+        status: friendSet.has(u.uid) ? 'friend' : pendingSet.has(u.uid) ? 'pending' : 'none',
+        acting: false,
+      }));
 
     this.allUsers.set(enriched);
     this.filteredUsers.set(enriched);
@@ -81,7 +88,9 @@ export class BuscarAmigosComponent implements OnInit {
     if (!me || targetUser.acting) return;
     targetUser.acting = true;
     this.filteredUsers.update(l => [...l]);
+
     await this.friendsService.sendRequest(me, targetUser.uid);
+
     targetUser.status = 'pending';
     targetUser.acting = false;
     this.filteredUsers.update(l => [...l]);
