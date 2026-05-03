@@ -42,6 +42,8 @@ export class QuizComponent implements OnInit, OnDestroy {
     { id: 'quantum',    label: 'Cuántica',     emoji: '⚛️', color: 'from-indigo-600 to-purple-500' },
     { id: 'nuclear',    label: 'Nuclear',      emoji: '☢️', color: 'from-amber-600 to-orange-500' },
     { id: 'newtonian',  label: 'Newtoniana',   emoji: '🍎', color: 'from-blue-600 to-cyan-500' },
+    { id: 'astronomy',  label: 'Astronomía',   emoji: '🔭', color: 'from-violet-600 to-indigo-500' },
+    { id: 'biology',    label: 'Biología',     emoji: '🧬', color: 'from-green-600 to-emerald-500' },
   ];
 
   ngOnInit() {
