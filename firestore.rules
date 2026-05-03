@@ -30,10 +30,19 @@ service cloud.firestore {
       allow update: if request.auth != null && request.auth.uid in resource.data.participants;
     }
 
-    // Amistades
+    // Amistades — write permitido al propio usuario O al amigo (para añadir en ambas direcciones)
     match /friendships/{userId}/friends/{friendId} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null
+        && (request.auth.uid == userId || request.auth.uid == friendId);
+    }
+
+    // Notificaciones de amistad
+    match /friendNotifications/{userId}/items/{itemId} {
+      // Solo el destinatario puede leer y borrar sus notificaciones
+      allow read, delete: if request.auth != null && request.auth.uid == userId;
+      // Cualquier usuario autenticado puede crear una notificación para otro
+      allow create: if request.auth != null;
     }
 
     // Solicitudes de amistad
