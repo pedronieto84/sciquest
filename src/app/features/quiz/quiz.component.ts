@@ -71,7 +71,7 @@ export class QuizComponent implements OnInit, OnDestroy {
     this.state.set('loading');
     this.sub?.unsubscribe();
     this.sub = this.quizService.getAllSubjectQuestions(subject).subscribe(qs => {
-      const questions = qs.slice(0, 8);
+      const questions = qs.slice(0, 10);
       this.questions.set(questions);
       this.currentIndex.set(0);
       this.answers.set([]);
