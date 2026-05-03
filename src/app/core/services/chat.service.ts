@@ -3,7 +3,6 @@ import {
   Firestore,
   doc,
   setDoc,
-  getDoc,
   updateDoc,
   collection,
   collectionData,
@@ -28,24 +27,22 @@ export class ChatService {
     return [uid1, uid2].sort().join('_');
   }
 
-  /** Obtiene o crea un chat entre dos usuarios */
+  /** Obtiene o crea un chat entre dos usuarios (sin leer primero para evitar permisos en doc inexistente) */
   async getOrCreateChat(me: SciUser, other: SciUser): Promise<string> {
     const chatId = this.getChatId(me.uid, other.uid);
     const ref = doc(this.firestore, `chats/${chatId}`);
-    const snap = await getDoc(ref);
 
-    if (!snap.exists()) {
-      const chatData: Omit<Chat, 'id'> = {
-        participants: [me.uid, other.uid],
-        lastMessage: '',
-        lastMessageAt: serverTimestamp(),
-        participantData: {
-          [me.uid]: { username: me.username, displayName: me.displayName, avatar: me.avatar },
-          [other.uid]: { username: other.username, displayName: other.displayName, avatar: other.avatar },
-        },
-      };
-      await setDoc(ref, chatData);
-    }
+    // setDoc con merge:true solo escribe los campos especificados sin borrar los existentes.
+    // participants y participantData son seguros de sobreescribir siempre.
+    // No incluimos lastMessage/lastMessageAt para no resetearlos en chats existentes.
+    await setDoc(ref, {
+      participants: [me.uid, other.uid],
+      participantData: {
+        [me.uid]: { username: me.username || '', displayName: me.displayName || '', avatar: me.avatar || '🔬' },
+        [other.uid]: { username: other.username || '', displayName: other.displayName || '', avatar: other.avatar || '🔬' },
+      },
+    }, { merge: true });
+
     return chatId;
   }
 
