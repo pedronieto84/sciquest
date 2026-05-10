@@ -20,7 +20,7 @@
     </div>
 
     <!-- Tabs con badges -->
-    <div class="max-w-lg mx-auto mt-4 grid grid-cols-3 gap-1 bg-slate-800/60 rounded-2xl p-1">
+    <div class="max-w-lg mx-auto mt-4 grid grid-cols-4 gap-1 bg-slate-800/60 rounded-2xl p-1">
 
       <!-- Amigos -->
       <button (click)="goTab('amigos')"
@@ -54,6 +54,14 @@
           ? 'relative bg-indigo-600 text-white font-bold rounded-xl py-2 text-sm transition-all'
           : 'relative text-slate-400 hover:text-white rounded-xl py-2 text-sm transition-all'">
         🔍 Buscar
+      </button>
+
+      <!-- Progreso -->
+      <button (click)="goTab('progreso')"
+        [class]="activeTab() === 'progreso'
+          ? 'relative bg-indigo-600 text-white font-bold rounded-xl py-2 text-sm transition-all'
+          : 'relative text-slate-400 hover:text-white rounded-xl py-2 text-sm transition-all'">
+        📈 Progreso
       </button>
     </div>
   </div>

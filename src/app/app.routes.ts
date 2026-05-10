@@ -74,6 +74,11 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   {
+    path: 'onboarding',
+    loadComponent: () => import('./features/onboarding/onboarding.component').then(m => m.OnboardingComponent),
+    canActivate: [authGuard],
+  },
+  {
     path: 'mi-cuenta',
     loadComponent: () => import('./features/mi-cuenta/mi-cuenta.component').then(m => m.MiCuentaComponent),
     loadChildren: () => import('./features/mi-cuenta/mi-cuenta.routes').then(m => m.MI_CUENTA_ROUTES),

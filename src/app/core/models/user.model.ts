@@ -20,6 +20,9 @@ export interface SciUser {
   duelsWon?: number;
   duelsLost?: number;
   createdAt: Date;
+  onboardingCompleted?: boolean;
+  subjectInterests?: string[];
+  subjectBaselines?: { [subject: string]: number };
 }
 
 export const LEVEL_XP_THRESHOLDS = [0, 100, 250, 500, 900, 1400, 2000, 2800, 3800, 5000];

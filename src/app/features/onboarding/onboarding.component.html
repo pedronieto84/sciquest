@@ -1,0 +1,82 @@
+<!-- Step 1: Subject Selection -->
+@if (step() === 1) {
+<div class="min-h-screen bg-[#0f172a] flex flex-col items-center justify-center px-4">
+  <h1 class="text-3xl font-bold text-white mb-2 text-center">¿Qué ciencias te interesan?</h1>
+  <p class="text-slate-400 mb-8 text-center">Elige al menos una materia</p>
+
+  <div class="grid grid-cols-2 gap-3 w-full max-w-sm mb-8">
+    @for (sub of subjects; track sub.id) {
+      <button
+        (click)="toggleSubject(sub.id)"
+        [class]="isSelected(sub.id)
+          ? 'bg-[#1e293b] rounded-2xl p-4 flex flex-col items-center gap-2 ring-2 ring-indigo-500 transition-all'
+          : 'bg-[#1e293b] rounded-2xl p-4 flex flex-col items-center gap-2 border border-slate-700/50 transition-all hover:border-slate-600'">
+        <span class="text-3xl">{{ sub.emoji }}</span>
+        <span class="text-white font-semibold text-sm">{{ sub.label }}</span>
+      </button>
+    }
+  </div>
+
+  <button
+    (click)="goToStep2()"
+    [disabled]="selectedSubjects().size === 0"
+    [class]="selectedSubjects().size > 0
+      ? 'w-full max-w-sm py-3 rounded-2xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-all'
+      : 'w-full max-w-sm py-3 rounded-2xl font-bold text-slate-500 bg-slate-800 cursor-not-allowed'">
+    Continuar →
+  </button>
+</div>
+}
+
+<!-- Step 2: Assessment Quiz -->
+@if (step() === 2) {
+<div class="min-h-screen bg-[#0f172a] flex flex-col items-center px-4 pt-16">
+  <h2 class="text-2xl font-bold text-white mb-2">Evaluación de nivel</h2>
+  <p class="text-slate-400 mb-4">Pregunta {{ currentQ() + 1 }} de {{ questions().length }}</p>
+
+  <!-- Progress bar -->
+  <div class="w-full max-w-sm h-2 bg-slate-800 rounded-full mb-8 overflow-hidden">
+    <div class="h-full bg-indigo-600 rounded-full transition-all duration-300"
+         [style.width.%]="((currentQ() + 1) / questions().length) * 100"></div>
+  </div>
+
+  @if (currentQuestion; as q) {
+    <div class="w-full max-w-sm">
+      <p class="text-white text-lg font-semibold mb-6 text-center">{{ q.question }}</p>
+
+      <div class="flex flex-col gap-3">
+        @for (opt of q.options; track $index) {
+          <button
+            (click)="selectAnswer($index)"
+            [disabled]="selectedOption() !== null"
+            [class]="getOptionClass($index) + ' w-full py-3 px-4 rounded-xl text-left font-medium transition-all'">
+            {{ opt }}
+          </button>
+        }
+      </div>
+    </div>
+  }
+</div>
+}
+
+<!-- Step 3: Results -->
+@if (step() === 3) {
+<div class="min-h-screen bg-[#0f172a] flex flex-col items-center justify-center px-4">
+  <div class="text-center mb-8">
+    <p class="text-6xl font-black text-white mb-2">{{ correctCount() }}/{{ questions().length }}</p>
+    <p class="text-2xl text-indigo-400 font-bold mb-4">{{ percentage }}%</p>
+    <p class="text-xl text-white">{{ scoreMessage }}</p>
+  </div>
+
+  <button
+    (click)="finishOnboarding()"
+    [disabled]="saving()"
+    class="w-full max-w-sm py-3 rounded-2xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-all disabled:opacity-50">
+    @if (saving()) {
+      Guardando...
+    } @else {
+      ¡Comenzar SciQuest! 🚀
+    }
+  </button>
+</div>
+}

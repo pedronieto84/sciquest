@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { environment } from '../../../environments/environment';
 import { Firestore, doc, getDoc } from '@angular/fire/firestore';
@@ -25,6 +25,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   private quizService = inject(QuizService);
   private chatService = inject(ChatService);
   private friendsService = inject(FriendsService);
+  private router = inject(Router);
 
   readonly appVersion = environment.appVersion;
   sciUser = signal<SciUser | null>(null);
@@ -47,7 +48,14 @@ export class HomeComponent implements OnInit, OnDestroy {
       if (!fireUser) { this.sciUser.set(null); this.unreadCount.set(0); return; }
       try {
         const snap = await getDoc(doc(this.firestore, `users/${fireUser.uid}`));
-        if (snap.exists()) this.sciUser.set(snap.data() as SciUser);
+        if (snap.exists()) {
+          const sciUser = snap.data() as SciUser;
+          if (!sciUser.onboardingCompleted) {
+            this.router.navigate(['/onboarding']);
+            return;
+          }
+          this.sciUser.set(sciUser);
+        }
       } catch (e) {
         console.error('Error loading user doc:', e);
       }

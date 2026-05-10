@@ -25,7 +25,7 @@ export class MiCuentaComponent implements OnInit, OnDestroy {
   private router = inject(Router);
 
   sciUser = signal<SciUser | null>(null);
-  activeTab = signal<'amigos' | 'chat' | 'buscar-amigos'>('amigos');
+  activeTab = signal<'amigos' | 'chat' | 'buscar-amigos' | 'progreso'>('amigos');
   pendingRequestsCount = signal(0);
   unreadChatsCount = signal(0);
 
@@ -69,12 +69,13 @@ export class MiCuentaComponent implements OnInit, OnDestroy {
   ngOnDestroy() { this.subs.forEach(s => s.unsubscribe()); }
 
   private updateActiveTab(url: string) {
-    if (url.includes('buscar-amigos')) this.activeTab.set('buscar-amigos');
+    if (url.includes('progreso')) this.activeTab.set('progreso');
+    else if (url.includes('buscar-amigos')) this.activeTab.set('buscar-amigos');
     else if (url.includes('chat')) this.activeTab.set('chat');
     else this.activeTab.set('amigos');
   }
 
-  goTab(tab: 'amigos' | 'chat' | 'buscar-amigos') {
+  goTab(tab: 'amigos' | 'chat' | 'buscar-amigos' | 'progreso') {
     this.activeTab.set(tab);
     this.router.navigate(['/mi-cuenta', tab]);
   }

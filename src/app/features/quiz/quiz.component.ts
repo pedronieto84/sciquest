@@ -7,6 +7,7 @@ import { QuizQuestion, Subject } from '../../core/models/quiz.model';
 import { Auth, user } from '@angular/fire/auth';
 import { Firestore, doc, getDoc, updateDoc, increment } from '@angular/fire/firestore';
 import { getLevelFromXp } from '../../core/models/user.model';
+import { ProgressService } from '../../core/services/progress.service';
 
 type QuizState = 'select' | 'loading' | 'playing' | 'results';
 
@@ -22,6 +23,7 @@ export class QuizComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private auth = inject(Auth);
   private firestore = inject(Firestore);
+  private progressService = inject(ProgressService);
 
   state = signal<QuizState>('select');
   questions = signal<QuizQuestion[]>([]);
@@ -152,6 +154,17 @@ export class QuizComponent implements OnInit, OnDestroy {
     }
 
     await updateDoc(userRef, updates);
+
+    // Track progress session
+    if (this.currentSubject) {
+      const totalAnswered = this.answers().length;
+      await this.progressService.saveSession(
+        fireUser.uid,
+        this.currentSubject,
+        this.correctCount,
+        totalAnswered
+      );
+    }
   }
 
   restart() {
